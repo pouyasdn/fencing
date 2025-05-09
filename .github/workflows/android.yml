@@ -1,60 +1,25 @@
-name: CI
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 0 1,15 * *'
+name: Build
+on: [push, pull_request]
 
 jobs:
+  # Build job. Builds app for Android with Buildozer
   build-android:
-    name: Build Android APK
+    name: Build for Android
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          python-version: '3.12'
+          workdir: test_app
+          buildozer_version: stable
 
-      - name: Enable Universe & install system dependencies
-        run: |
-          sudo apt-get update                                      # تازه‌سازی فهرست بسته‌ها 
-          sudo apt-get install -y software-properties-common       # برای add-apt-repository :contentReference[oaicite:4]{index=4}
-          sudo add-apt-repository universe                         # فعال‌سازی مخزن universe 
-          sudo apt-get update                                      # تازه‌سازی مجدد
-          sudo apt-get install -y \
-            python3-distutils                                     # بسته distutils در Universe :contentReference[oaicite:6]{index=6}
-            openjdk-17-jdk                                         # Java 17 برای Android SDK :contentReference[oaicite:7]{index=7}
-            zip unzip                                              # ابزار بسته‌بندی
-            git                                                    # نسخه‌بندی کد
-            libssl-dev libffi-dev libsqlite3-dev                   # پیش‌نیازهای C-extension
-
-      - name: Install Buildozer & Python deps
-        run: |
-          python3 -m pip install --upgrade pip setuptools          # pip و setuptools به‌روز :contentReference[oaicite:8]{index=8}
-          pip install buildozer cython                             # Buildozer و Cython
-
-      - name: Cache Buildozer artifacts
-        uses: actions/cache@v3
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
         with:
-          path: |
-            ~/.buildozer
-            ~/.local/share/buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-
-      - name: Build APK
-        run: |
-          buildozer android debug                                 # اجرا و تولید APK :contentReference[oaicite:9]{index=9}
-        working-directory: .
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: android-apk
-          path: ./.buildozer/android/platform/build/dists/*/bin/*.apk
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
