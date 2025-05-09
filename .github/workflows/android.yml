@@ -1,24 +1,50 @@
-name: Build APK                     # نام workflow
+name: Build APK with Buildozer
+
 on:
   push:
-    branches: [main]                # اجرا هنگام push به شاخه‌ی main
+    branches: [ main ]                 # اجرا هنگام push به شاخه‌ی main
+  push:
+    tags: [ 'v*.*.*' ]                # اجرا هنگام push تگ‌های SemVer
 
 jobs:
   build:
-    runs-on: ubuntu-latest         # محیط اجرا (Ubuntu)
+    runs-on: ubuntu-latest            # محیط اجرا: Ubuntu LTS
 
     steps:
-      - name: دریافت کد پروژه     # چک‌اوت از مخزن (کد منبع)
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4      # بارگذاری کامل کد شما از مخزن :contentReference[oaicite:0]{index=0}
 
-      - name: ساخت با Buildozer   # اجرای Buildozer (ساخت APK)
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4  # نصب پایتون و افزودن به PATH :contentReference[oaicite:1]{index=1}
         with:
-          command: 'yes | buildozer android debug'  # پذیرش خودکار لایسنس و ساخت APK
+          python-version: '3.9'        # نسخه‌ی پایتون (بدون فعال‌سازی cache)
 
-      - name: آپلود فایل APK      # ذخیره‌ی خروجی APK به عنوان artifact
-        uses: actions/upload-artifact@v4
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip \
+            openjdk-17-jdk autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo5 cmake libffi-dev libssl-dev       # براساس مستندات رسمی Buildozer :contentReference[oaicite:2]{index=2}
+
+      - name: Install Buildozer & Cython
+        run: |
+          python3 -m pip install --upgrade pip         # بروزرسانی pip :contentReference[oaicite:3]{index=3}
+          pip install --user buildozer cython==0.29.33  # نصب Buildozer و Cython از PyPI :contentReference[oaicite:4]{index=4}
+
+      - name: Add ~/.local/bin to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH  # اطمینان از دسترسی به Buildozer پس از نصب :contentReference[oaicite:5]{index=5}
+
+      - name: Initialize Buildozer
+        run: |
+          buildozer init                            # ایجاد buildozer.spec (در صورت نیاز) :contentReference[oaicite:6]{index=6}
+
+      - name: Build Android APK
+        run: |
+          buildozer android debug                   # ساخت APK (خروجی در bin/) :contentReference[oaicite:7]{index=7}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4           # ذخیره‌ی خروجی به‌عنوان artifact :contentReference[oaicite:8]{index=8}
         with:
-          name: apk
-          path: ${{ steps.buildozer.outputs.filename }}  # مسیر فایل APK تولید شده
+          name: myapp-debug.apk
+          path: bin/*.apk
