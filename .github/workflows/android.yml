@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4           # بارگذاری کد :contentReference[oaicite:3]{index=3}
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v4      # نصب پایتون بدون فعال‌سازی cache :contentReference[oaicite:4]{index=4}
         with:
           python-version: '3.9'
 
@@ -22,28 +22,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-          git zip unzip \
-          openjdk-17-jdk autoconf libtool pkg-config \
-          zlib1g-dev cmake libffi-dev libssl-dev \
-          libncurses-dev libtinfo-dev
-
+            git zip unzip \
+            openjdk-17-jdk autoconf libtool pkg-config \
+            zlib1g-dev cmake libffi-dev libssl-dev \
+            libncurses-dev libtinfo-dev      # بسته‌های لازم برای Buildozer :contentReference[oaicite:5]{index=5}
 
       - name: Install Buildozer & Cython
         run: |
-          python3 -m pip install --upgrade pip
-          pip install --user buildozer cython==0.29.33
+          python3 -m pip install --upgrade pip  # بروزرسانی pip
+          pip install --user buildozer cython   # نصب ابزار Buildozer :contentReference[oaicite:6]{index=6}
 
-      - name: Add ~/.local/bin to PATH
+      - name: Add Buildozer to PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Initialize Buildozer
-        run: buildozer init
-
       - name: Build Android APK
-        run: buildozer android debug
+        run: buildozer android debug           # ساخت APK (خروجی در bin/) :contentReference[oaicite:7]{index=7}
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4       # ذخیره‌ی خروجی APK :contentReference[oaicite:8]{index=8}
         with:
           name: myapp-debug.apk
           path: bin/*.apk
