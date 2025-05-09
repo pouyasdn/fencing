@@ -18,14 +18,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      # --- مرحله تنظیم Android SDK ---
-      # اینجا مشکل در دانلود خود این اکشن است
-      - name: Setup Android SDK
-        uses: android-action/setup-android@v3 # <--- مشکل در اینجا
-        with:
-          build-tools: '34.0.0'
-          sdk-components: platforms;android-34
-
       - name: Install Buildozer dependencies
         run: |
           sudo apt update
@@ -36,9 +28,8 @@ jobs:
       - name: Build APK
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          export JAVA_HOME="/usr/lib/jvm/temurin-17-jdk-amd64"
           export BUILD_LOG_LEVEL=2
-          yes | buildozer -v android debug
+          buildozer -v android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
