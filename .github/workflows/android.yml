@@ -2,9 +2,10 @@ name: Android CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-  push:
-    tags: [ 'v*.*.*' ]
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build:
@@ -15,84 +16,84 @@ jobs:
         arch: [armeabi-v7a, arm64-v8a]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-        cache: 'pip'  # کش کردن وابستگی‌ها :contentReference[oaicite:0]{index=0}
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
 
-    - name: Cache Docker layers
-      uses: actions/cache@v3
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-  # کش لایه‌های Docker :contentReference[oaicite:1]{index=1}
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-    - name: Buildozer in Docker
-      run: |
-        docker build \
-          --cache-from=type=local,src=/tmp/.buildx-cache \
-          --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-          -t myapp-build .
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-        docker run --rm -v ${{ github.workspace }}:/app myapp-build \
-          bash -c "cd /app && buildozer android debug"  # محیط ایزوله با Buildozer-Docker :contentReference[oaicite:2]{index=2}
+      - name: Buildozer in Docker
+        run: |
+          docker build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new \
+            -t myapp-build .
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          docker run --rm -v ${{ github.workspace }}:/app myapp-build \
+            bash -c "cd /app && buildozer android debug"
 
-    - name: Install dev dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest flake8  # نصب pytest و flake8 برای تست و lint :contentReference[oaicite:3]{index=3}
+      - name: Install dev dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest flake8
 
-    - name: Run tests with pytest
-      run: pytest --junitxml=reports/junit.xml  # اجرای تست‌های واحد :contentReference[oaicite:4]{index=4}
+      - name: Run tests with pytest
+        run: pytest --junitxml=reports/junit.xml
 
-    - name: Lint with flake8
-      uses: py-actions/flake8@v1  # lint کد با flake8 :contentReference[oaicite:5]{index=5}
+      - name: Lint with flake8
+        uses: py-actions/flake8@v1
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2  # اسکن سورس با CodeQL :contentReference[oaicite:6]{index=6}
-      with:
-        languages: python, java
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python, java
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
 
-    - name: Scan APK with MobSF
-      uses: fundacaocerti/github-action-for-mobsf@v1.5  # اسکن باینری با MobSF :contentReference[oaicite:7]{index=7}
-      with:
-        apk_path: bin/*.apk
+      - name: Scan APK with MobSF
+        uses: fundacaocerti/github-action-for-mobsf@v1.5
+        with:
+          apk_path: bin/*.apk
 
-    - name: Generate semantic version
-      uses: GitTools/actions/git-version@v0.9.14  # نسخه‌گذاری خودکار :contentReference[oaicite:8]{index=8}
-      id: semver
+      - name: Generate semantic version
+        uses: GitTools/actions/git-version@v0.9.14
+        id: semver
 
-    - name: Build release APK
-      run: buildozer android release
+      - name: Build release APK
+        run: buildozer android release
 
-    - name: Sign release APK
-      run: |
-        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-          -keystore ${{ secrets.KEYSTORE_PATH }} \
-          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
-          -keypass ${{ secrets.KEY_PASSWORD }} \
-          bin/myapp-release-unsigned.apk ${{ secrets.KEY_ALIAS }}  # امضای امن APK :contentReference[oaicite:9]{index=9}
+      - name: Sign release APK
+        run: |
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore ${{ secrets.KEYSTORE_PATH }} \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.KEY_PASSWORD }} \
+            bin/myapp-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2  # انتشار خودکار در Releases :contentReference[oaicite:10]{index=10}
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        tag_name: ${{ steps.semver.outputs.semver }}
-        files: bin/myapp-release.apk
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.semver.outputs.semver }}
+          files: bin/myapp-release.apk
 
-    - name: Notify Slack
-      uses: slackapi/slack-github-action@v2.0.0-rc.2  # اطلاع‌رسانی در Slack :contentReference[oaicite:11]{index=11}
-      with:
-        webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-        payload: |
-          {
-            "text": ":rocket: APK version ${{ steps.semver.outputs.semver }} is now available!"
-          }
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v2.0.0-rc.2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": ":rocket: APK version ${{ steps.semver.outputs.semver }} is now available!"
+            }
