@@ -10,32 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      # 1. Get the code
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
+      # 2. Set up Python (3.10 is recommended)
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      # 3. Install Buildozer and python-for-android (p4a)
       - name: Install Buildozer & python-for-android
         run: |
           python3 -m pip install --upgrade pip setuptools cython
           pip install buildozer python-for-android
+        # Ensures ~/.buildozer/android/platform/python-for-android is created :contentReference[oaicite:2]{index=2}
 
+      # 4. Provision Android SDK + Build-Tools + NDK + accept licenses
       - name: Set up Android SDK
         uses: android-actions/setup-android@v2
         with:
-          api-level: 29
-          build-tools: 29.0.3
-          ndk: 21
-          platform-tools: true
+          api-level: 29            # Android 10
+          build-tools: 29.0.3      # Includes 'aidl' :contentReference[oaicite:3]{index=3}
+          ndk: 21                  # NDK API 21
+          platform-tools: true     # adb, fastboot, etc.
 
+      # 5. Perform a clean build
       - name: Clean previous build
         run: buildozer android clean
+        # Now ${GITHUB_WORKSPACE}/.buildozer/android/platform/python-for-android exists
 
+      # 6. Build the APK
       - name: Build APK
         run: buildozer android debug --verbose
 
+      # 7. Upload the resulting APK as an artifact
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
