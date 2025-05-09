@@ -18,7 +18,7 @@ jobs:
           command: 'yes | buildozer android debug'  # پذیرش خودکار لایسنس و ساخت APK
 
       - name: آپلود فایل APK      # ذخیره‌ی خروجی APK به عنوان artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: apk
           path: ${{ steps.buildozer.outputs.filename }}  # مسیر فایل APK تولید شده
