@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Buildozer & p4a
+      - name: Install Buildozer & python-for-android
         run: |
           python3 -m pip install --upgrade pip setuptools cython
           pip install buildozer python-for-android
