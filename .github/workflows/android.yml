@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     name: Build APK
-    runs-on: ubuntu-22.04  # استفاده از نسخه دقیق‌تر و جدید اوبونتو
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
@@ -19,17 +19,13 @@ jobs:
           python-version: "3.10"
 
       # --- مرحله تنظیم Android SDK ---
-      # ورژن اکشن از v2 به v3 تغییر داده شده است
+      # اینجا مشکل در دانلود خود این اکشن است
       - name: Setup Android SDK
-        uses: android-action/setup-android@v3 # <--- تغییر اینجا
+        uses: android-action/setup-android@v3 # <--- مشکل در اینجا
         with:
-          # نسخه‌های build-tools و platform SDK مورد نیاز
-          # معمولا نسخه‌های جدید با openjdk-17 سازگار هستند
-          build-tools: '34.0.0' # یا نسخه‌ای که با پروژه شما و buildozer سازگار است
-          sdk-components: platforms;android-34 # یا پلتفرم مناسب با build-tools
-          # cache: true # می‌توانید برای سرعت بیشتر کش را فعال کنید
+          build-tools: '34.0.0'
+          sdk-components: platforms;android-34
 
-      # --- مرحله نصب وابستگی‌های سیستمی و پایتون ---
       - name: Install Buildozer dependencies
         run: |
           sudo apt update
@@ -37,7 +33,6 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade Cython virtualenv buildozer python-for-android
 
-      # --- مرحله بیلد APK ---
       - name: Build APK
         run: |
           export PATH="$HOME/.local/bin:$PATH"
@@ -45,7 +40,6 @@ jobs:
           export BUILD_LOG_LEVEL=2
           yes | buildozer -v android debug
 
-      # --- مرحله آپلود Artifact ---
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
