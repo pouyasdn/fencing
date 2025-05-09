@@ -16,24 +16,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python }}
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-          cache: 'pip'
+          # اگر فایل requirements.txt دارید:
+          cache: 'pip'                    # فعال‌سازی کش pip :contentReference[oaicite:5]{index=5}
           cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # نصب بسته‌ها از فایل dependencies :contentReference[oaicite:6]{index=6}
           pip install buildozer cython
 
-      - name: Build APK using Buildozer in Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip unzip
-          buildozer android debug
+      - name: Build APK
+        run: buildozer android debug      # ساخت APK با Buildozer :contentReference[oaicite:7]{index=7}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -41,11 +39,10 @@ jobs:
           name: myapp-debug-apk
           path: bin/*.apk
 
-      - name: Create GitHub Release (on tag push)
+      - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: bin/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
