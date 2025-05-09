@@ -22,25 +22,50 @@ jobs:
       - name: Install Android SDK Command-line Tools
         run: |
           sudo mkdir -p /usr/local/lib/android/sdk/cmdline-tools
-          sudo curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          sudo unzip -q commandlinetools.zip -d /usr/local/lib/android/sdk/cmdline-tools
-          sudo mv /usr/local/lib/android/sdk/cmdline-tools/cmdline-tools /usr/local/lib/android/sdk/cmdline-tools/latest
+          sudo curl -o commandlinetools.zip \
+            https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          sudo unzip -q commandlinetools.zip \
+            -d /usr/local/lib/android/sdk/cmdline-tools
+          sudo mv /usr/local/lib/android/sdk/cmdline-tools/cmdline-tools \
+            /usr/local/lib/android/sdk/cmdline-tools/latest
+          echo "✅ Command-line Tools installed"  # تأیید نصب ابزارها :contentReference[oaicite:5]{index=5}
 
       - name: Set environment variables
         run: |
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "PATH=/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools:$PATH" >> $GITHUB_ENV
+          echo "✅ Environment variables set"
 
-      - name: Install required SDK components
+      - name: Install required SDK components & accept licenses
         run: |
-          sdkmanager --sdk_root=/usr/local/lib/android/sdk "platform-tools" "platforms;android-33" "build-tools;36.0.0"
-          yes | sdkmanager --sdk_root=/usr/local/lib/android/sdk --licenses
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;36.0.0"   # نصب Build-Tools 36.0.0 :contentReference[oaicite:6]{index=6}
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses  # پذیرش خودکار مجوزها :contentReference[oaicite:7]{index=7}
+          echo "✅ SDK components installed and licenses accepted"
+
+      - name: Symlink sdkmanager for Buildozer
+        run: |
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
+          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          echo "✅ Symlink for sdkmanager created"  # رفع خطای پیدا نشدن sdkmanager :contentReference[oaicite:8]{index=8}
+
+      - name: Verify AIDL presence
+        run: |
+          if [ ! -f "$ANDROID_SDK_ROOT/build-tools/36.0.0/aidl" ]; then
+            echo "‼️ AIDL not found, exiting"
+            exit 1
+          fi
+          echo "✅ AIDL is present"  # اطمینان از وجود AIDL :contentReference[oaicite:9]{index=9}
 
       - name: Install Buildozer and dependencies
         run: |
           python3 -m pip install --upgrade pip
           pip install --user buildozer cython
+          echo "✅ Buildozer & Cython installed"
 
       - name: Build the APK
         run: |
