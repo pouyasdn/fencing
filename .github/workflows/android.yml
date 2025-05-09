@@ -1,4 +1,5 @@
 name: Android Build APK
+
 on:
   push:
     branches: [ main ]
@@ -6,7 +7,7 @@ on:
 jobs:
   build:
     name: Build APK
-    runs-on: ubuntu-22.04  # نسخه دقیق‌تر برای جلوگیری از ناسازگاری
+    runs-on: ubuntu-22.04  # استفاده از نسخه دقیق‌تر و جدید اوبونتو
 
     steps:
       - name: Checkout code
@@ -17,22 +18,39 @@ jobs:
         with:
           python-version: "3.10"
 
+      # --- مرحله جدید برای تنظیم Android SDK ---
+      - name: Setup Android SDK
+        uses: android-action/setup-android@v2
+        with:
+          # نسخه‌های build-tools و platform SDK مورد نیاز
+          # معمولا نسخه‌های جدید با openjdk-17 سازگار هستند
+          build-tools: '34.0.0' # یا نسخه‌ای که با پروژه شما و buildozer سازگار است
+          sdk-components: platforms;android-34 # یا پلتفرم مناسب با build-tools
+
+      # --- مرحله نصب وابستگی‌های سیستمی و پایتون (تغییرات قبلی اعمال شده) ---
       - name: Install Buildozer dependencies
         run: |
           sudo apt update
+          # libtinfo6 برای ubuntu-22.04 مناسب است
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade Cython virtualenv buildozer python-for-android
 
+      # --- مرحله بیلد APK ---
       - name: Build APK
         run: |
+          # اضافه کردن مسیر bin به PATH
           export PATH="$HOME/.local/bin:$PATH"
+          # تنظیم JAVA_HOME برای JDK 17
           export JAVA_HOME="/usr/lib/jvm/temurin-17-jdk-amd64"
+          # افزایش سطح لاگ برای اشکال‌یابی بهتر
           export BUILD_LOG_LEVEL=2
-          buildozer -v android debug
+          # اجرای buildozer. yes | برای تایید اتوماتیک سوالات مجوز SDK
+          yes | buildozer -v android debug
 
+      # --- مرحله آپلود Artifact ---
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: myapp-apk
-          path: bin/*.apk
+          path: bin/*.apk # مسیر فایل APK تولید شده
