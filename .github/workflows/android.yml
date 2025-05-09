@@ -27,8 +27,7 @@ jobs:
           buildozer android debug
         working-directory: .
         env:
-          # در صورت نیاز متغیرهای اندروید SDK را از Secrets ست کنید
-          # ANDROIDSDK_ROOT: ${{ secrets.ANDROIDSDK_ROOT }}
+          ANDROIDSDK_ROOT: ${{ secrets.ANDROIDSDK_ROOT }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
