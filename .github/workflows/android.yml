@@ -54,9 +54,16 @@ jobs:
 
       - uses: github/codeql-action/analyze@v2
 
-      - name: Generate semantic version
-        uses: GitTools/actions/git-version@v0.9.14
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.14
+        with:
+          versionSpec: '5.x'
+
+      - name: Get version
+        run: |
+          echo "semver=$(gitversion /showvariable SemVer)" >> $GITHUB_OUTPUT
         id: semver
+
 
       - name: Build release APK
         run: buildozer android release
