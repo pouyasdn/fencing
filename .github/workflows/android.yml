@@ -25,22 +25,24 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade Cython virtualenv buildozer python-for-android
 
-      - name: Prepare Android SDK (cmdline-tools fix)
+      - name: Manually install Android cmdline-tools and accept licenses
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p "$SDK_DIR/cmdline-tools"
+          cd "$SDK_DIR/cmdline-tools"
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip
           rm cmdline-tools.zip
           mv cmdline-tools latest
 
-      - name: Accept Android SDK Licenses
-        run: |
-          mkdir -p ~/.android
-          echo 8933bad161af4178b1185d1a37fbf41ea5269c55 > ~/.android/repositories.cfg || true
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          # Add sdkmanager to PATH and install build-tools and platform-tools
+          export PATH=$SDK_DIR/cmdline-tools/latest/bin:$PATH
+          yes | $SDK_DIR/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_DIR "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+          # Accept licenses
+          mkdir -p $SDK_DIR/licenses
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $SDK_DIR/licenses/android-sdk-license
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > $SDK_DIR/licenses/android-sdk-preview-license
 
       - name: Build APK
         run: |
