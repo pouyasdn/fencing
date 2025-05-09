@@ -1,63 +1,57 @@
-name: Build APK with Buildozer
+name: ساخت APK
 
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
+      - name: نصب Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
-      - name: Install system dependencies
+      - name: نصب بسته‌های مورد نیاز
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            m4 \
-            autoconf \
-            automake \
-            libtool \
-            libtool-bin \
-            gettext \
-            autopoint \
-            pkgconf \
-            build-essential \
-            git \
-            openjdk-11-jdk \
-            unzip \
-            zip \
-            zlib1g-dev \
-            libffi-dev \
-            libssl-dev \
-            libncurses-dev \
-            libtinfo-dev \
-            libsdl2-dev
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip \
+              autoconf automake libtool m4 autopoint pkgconf gettext
 
-      - name: Upgrade pip and install Python deps
+      - name: نصب Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r21e
+          add-to-path: false
+
+      - name: تنظیم مسیر NDK
         run: |
-          python3 -m pip install --upgrade pip
-          pip install buildozer==1.5.0 cython==0.29.33 kivy arabic_reshaper python-bidi
+          echo "APP_ANDROID_NDK_PATH=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
 
-      - name: Add Buildozer to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: نصب کتابخانه‌های Python
+        run: |
+          pip install --upgrade pip
+          pip install Cython kivy arabic_reshaper python-bidi buildozer
 
-      - name: Clean previous build artifacts
-        run: rm -rf ./.buildozer
+      - name: تنظیم مسیر aclocal و m4
+        run: |
+          echo "M4=/usr/bin/m4" >> $GITHUB_ENV
+          echo "ACLOCAL=/usr/bin/aclocal" >> $GITHUB_ENV
 
-      - name: Build Android APK
+      - name: ساخت APK با Buildozer
         run: buildozer android debug
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: ذخیره APK
+        uses: actions/upload-artifact@v3
         with:
-          name: fencingapp-debug
-          path: bin/*.apk
+          name: apk
+          path: '**/bin/*.apk'
