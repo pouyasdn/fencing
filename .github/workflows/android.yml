@@ -3,8 +3,6 @@ name: Build APK with Buildozer
 on:
   push:
     branches: [ main ]                 # اجرا هنگام push به شاخه‌ی main
-  push:
-    tags: [ 'v*.*.*' ]                # اجرا هنگام push تگ‌های SemVer
 
 jobs:
   build:
