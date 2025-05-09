@@ -25,7 +25,16 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade Cython virtualenv buildozer python-for-android
 
-      - name: Accept Android SDK Licenses (manually)
+      - name: Prepare Android SDK (cmdline-tools fix)
+        run: |
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          rm cmdline-tools.zip
+          mv cmdline-tools latest
+
+      - name: Accept Android SDK Licenses
         run: |
           mkdir -p ~/.android
           echo 8933bad161af4178b1185d1a37fbf41ea5269c55 > ~/.android/repositories.cfg || true
