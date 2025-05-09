@@ -22,24 +22,23 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install system dependencies
+      - name: Enable Universe & install system dependencies
         run: |
-          sudo apt-get update
+          sudo apt-get update                                      # تازه‌سازی فهرست بسته‌ها 
+          sudo apt-get install -y software-properties-common       # برای add-apt-repository :contentReference[oaicite:4]{index=4}
+          sudo add-apt-repository universe                         # فعال‌سازی مخزن universe 
+          sudo apt-get update                                      # تازه‌سازی مجدد
           sudo apt-get install -y \
-            software-properties-common \
-            openjdk-17-jdk \
-            zip unzip \
-            git \
-            python3-distutils \
-            python3-dev \
-            libffi-dev \
-            libssl-dev \
-            libsqlite3-dev
+            python3-distutils                                     # بسته distutils در Universe :contentReference[oaicite:6]{index=6}
+            openjdk-17-jdk                                         # Java 17 برای Android SDK :contentReference[oaicite:7]{index=7}
+            zip unzip                                              # ابزار بسته‌بندی
+            git                                                    # نسخه‌بندی کد
+            libssl-dev libffi-dev libsqlite3-dev                   # پیش‌نیازهای C-extension
 
-      - name: Install Buildozer & dependencies
+      - name: Install Buildozer & Python deps
         run: |
-          python3 -m pip install --upgrade pip setuptools
-          pip install buildozer cython
+          python3 -m pip install --upgrade pip setuptools          # pip و setuptools به‌روز :contentReference[oaicite:8]{index=8}
+          pip install buildozer cython                             # Buildozer و Cython
 
       - name: Cache Buildozer artifacts
         uses: actions/cache@v3
@@ -51,12 +50,11 @@ jobs:
 
       - name: Build APK
         run: |
-          buildozer android debug
+          buildozer android debug                                 # اجرا و تولید APK :contentReference[oaicite:9]{index=9}
         working-directory: .
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: android-apk
-          path: |
-            ./.buildozer/android/platform/build/dists/*/bin/*.apk
+          path: ./.buildozer/android/platform/build/dists/*/bin/*.apk
