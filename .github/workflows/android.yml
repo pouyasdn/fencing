@@ -10,37 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ۱. دریافت کد
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # ۲. تنظیم پایتون
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.10'    # پایتون 3.10 توصیه‌شده توسط p4a :contentReference[oaicite:2]{index=2}
 
-      - name: Install Buildozer & dependencies
+      # ۳. نصب Buildozer و python-for-android
+      - name: Install Buildozer & python-for-android
         run: |
           python3 -m pip install --upgrade pip setuptools cython
-          pip install buildozer
+          pip install buildozer python-for-android  # حتماً p4a را نصب کنید :contentReference[oaicite:3]{index=3}
 
-      # ← این بخش جایگزین تمام دستورات sdkmanager دستی می‌شود:
+      # ۴. آماده‌سازی Android SDK و ابزارهای خط‌فرمان
       - name: Set up Android SDK
         uses: android-actions/setup-android@v2
         with:
-          api-level: 29
-          build-tools: 29.0.3
-          ndk: 21
-          platform-tools: true
+          api-level: 29            # API سطح ۲۹ (Android 10)
+          build-tools: 29.0.3      # نسخه Build Tools شامل aidl :contentReference[oaicite:4]{index=4}
+          ndk: 21                  # نسخه NDK (در صورت نیاز)
+          platform-tools: true     # نصب platform-tools (adb, fastboot)
 
+      # ۵. پاک‌سازی هر بیلد قبلی
       - name: Clean previous build
         run: buildozer android clean
 
+      # ۶. ساخت APK
       - name: Build APK
-        run: buildozer android debug --verbose
+        run: buildozer android debug --verbose  # اجرای Buildozer
 
-      - name: List output APK(s)
-        run: find . -type f -name "*.apk"
-
+      # ۷. آپلود خروجی به عنوان Artifact
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
