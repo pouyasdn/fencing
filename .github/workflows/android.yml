@@ -29,8 +29,8 @@ jobs:
         run: |
           buildozer android debug
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: fencing-app
-          path: bin/*.apk
+         name: my-artifact
+         path: bin/*.apk
