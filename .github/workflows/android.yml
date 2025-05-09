@@ -1,51 +1,56 @@
-name: Build Kivy Android APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install system dependencies
+      - name: Download Android Command-line Tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y zip unzip openjdk-11-jdk \
-            python3-venv python3-dev libffi-dev libssl-dev \
-            autoconf automake libtool pkg-config \
-            zlib1g-dev libncurses5-dev
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          curl -L https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip \
+            -o cmdline-tools.zip
+          unzip cmdline-tools.zip
+          mv cmdline-tools latest
+
+      - name: Add sdkmanager to PATH
+        run: echo "$HOME/android-sdk/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-29" "build-tools;29.0.3"
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install Buildozer & python-for-android
+      - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools cython
-          pip install buildozer python-for-android
-
-      - name: Install Android SDK & accept licenses
-        run: |
-          yes | buildozer android sdk --sdk --ndk --licenses
+          python -m pip install --upgrade pip setuptools cython
+          pip install buildozer
 
       - name: Clean previous build
         run: buildozer android clean
 
       - name: Build APK
-        run: |
-          buildozer android debug --verbose
+        run: buildozer android debug
 
-      - name: List output APK(s)
-        run: find . -type f -name "*.apk"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
         with:
-          name: fencing-app-apk
+          name: fencing-app
           path: bin/*.apk
