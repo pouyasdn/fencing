@@ -1,49 +1,24 @@
-name: Android CI/CD Pipeline
-
+name: Build APK                     # نام workflow
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
+    branches: [main]                # اجرا هنگام push به شاخه‌ی main
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python: [3.9]
+    runs-on: ubuntu-latest         # محیط اجرا (Ubuntu)
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: دریافت کد پروژه     # چک‌اوت از مخزن (کد منبع)
+        uses: actions/checkout@v3
+
+      - name: ساخت با Buildozer   # اجرای Buildozer (ساخت APK)
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          fetch-depth: 0                                  # اطمینان از دریافت همه فایل‌ها :contentReference[oaicite:10]{index=10}
+          command: 'yes | buildozer android debug'  # پذیرش خودکار لایسنس و ساخت APK
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: آپلود فایل APK      # ذخیره‌ی خروجی APK به عنوان artifact
+        uses: actions/upload-artifact@v3
         with:
-          python-version: ${{ matrix.python }}
-          cache: 'pip'                                    # فعال‌سازی کش pip :contentReference[oaicite:11]{index=11}
-          cache-dependency-path: requirements.txt         # مسیر دقیق فایل وابستگی :contentReference[oaicite:12]{index=12}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt                  # نصب از فایل وابستگی :contentReference[oaicite:13]{index=13}
-          pip install buildozer cython
-
-      - name: Build APK
-        run: buildozer android debug                      # ساخت APK با Buildozer :contentReference[oaicite:14]{index=14}
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: myapp-debug-apk
-          path: bin/*.apk
-
-      - name: Create GitHub Release (on tag push)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: bin/*.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: apk
+          path: ${{ steps.buildozer.outputs.filename }}  # مسیر فایل APK تولید شده
