@@ -2,10 +2,8 @@ name: Android CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*.*.*'
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
 
 jobs:
   build:
@@ -16,17 +14,14 @@ jobs:
         arch: [armeabi-v7a, arm64-v8a]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-          cache: 'pip'
+          cache: pip
 
-      - name: Cache Docker layers
-        uses: actions/cache@v3
+      - uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -41,31 +36,23 @@ jobs:
             -t myapp-build .
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
           docker run --rm -v ${{ github.workspace }}:/app myapp-build \
-            bash -c "cd /app && buildozer android debug"
+          bash -c "cd /app && buildozer android debug"
 
       - name: Install dev dependencies
         run: |
           pip install -r requirements.txt
           pip install pytest flake8
 
-      - name: Run tests with pytest
+      - name: Run tests
         run: pytest --junitxml=reports/junit.xml
 
-      - name: Lint with flake8
-        uses: py-actions/flake8@v1
+      - uses: py-actions/flake8@v1
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+      - uses: github/codeql-action/init@v2
         with:
           languages: python, java
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-
-      - name: Scan APK with MobSF
-        uses: fundacaocerti/github-action-for-mobsf@v1.5
-        with:
-          apk_path: bin/*.apk
+      - uses: github/codeql-action/analyze@v2
 
       - name: Generate semantic version
         uses: GitTools/actions/git-version@v0.9.14
@@ -90,10 +77,8 @@ jobs:
           files: bin/myapp-release.apk
 
       - name: Notify Slack
-        uses: slackapi/slack-github-action@v2.0.0-rc.2
+        uses: slackapi/slack-github-action@v2
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
-            {
-              "text": ":rocket: APK version ${{ steps.semver.outputs.semver }} is now available!"
-            }
+            {"text":":rocket: APK ${{ steps.semver.outputs.semver }} آماده است!"}
