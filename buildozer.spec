@@ -1,19 +1,9 @@
 [app]
-
-# (str) Title of your application
-title = Fencing competitions
-
-# (str) Package name
-package.name = fencingapp
-
-# (str) Package domain (needed for android/ios packaging)
-package.domain = org.pouya
-
-# (str) Source code where the main.py live
-source.dir = .
-
-# (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ttf
+ title = Fencing competitions
+ package.name = fencingapp
+ package.domain = org.pouya
+ source.dir = .
+ source.include_exts = py,png,jpg,kv,atlas,ttf
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -29,7 +19,7 @@ source.include_exts = py,png,jpg,kv,atlas,ttf
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 0.1
+version = 2.0
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -37,7 +27,8 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = kivy
+
+requirements = python3,kivy==2.1.0,kivymd,sqlite3
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
