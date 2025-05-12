@@ -1,3 +1,12 @@
+import os
+import shutil
+
+# Prevent Kivy from copying logo directory (avoiding permission errors)
+# Create destination folder and override shutil.copytree
+dst = os.path.join(os.getcwd(), '.kivy', 'icon')
+os.makedirs(dst, exist_ok=True)
+shutil.copytree = lambda src, dst, **kw: None
+
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.properties import ListProperty
@@ -20,6 +29,12 @@ KV = '''
     icon_color: 1,1,1,1
     on_enter: self.md_bg_color = (0.2,0.8,0.8,1)
     on_leave: self.md_bg_color = app.theme_cls.accent_color
+
+<StarIconRightWidget@IconRightWidget>:
+    size_hint: None, None
+    size: dp(36), dp(36)
+    pos_hint: {"center_y": .5}
+    padding: dp(8), 0
 
 <IconRightWidget@IconRightWidget>:
     size_hint: None, None
@@ -231,7 +246,7 @@ class MenuScreen(MDScreen):
         del_btn = IconRightWidget(icon='delete')
         del_btn.on_release = lambda btn=del_btn, it=item, nm=name: self.confirm_remove(it, nm)
 
-        save_btn = IconRightWidget(icon='star-outline')
+        save_btn = Factory.StarIconRightWidget(icon='star-outline')
         save_btn.on_release = lambda btn=save_btn, nm=name: self.toggle_save(btn, nm)
 
         item.add_widget(del_btn)
