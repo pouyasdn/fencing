@@ -1,9 +1,9 @@
 [app]
- title = Fencing competitions
- package.name = fencingapp
- package.domain = org.pouya
- source.dir = .
- source.include_exts = py,png,jpg,kv,atlas,ttf
+title = Fencing competitions
+package.name = fencingapp
+package.domain = org.pouya
+source.dir = .
+source.include_exts = py,png,jpg,kv,atlas,ttf,json
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -28,7 +28,7 @@ version = 2.0
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
 
-requirements = python3,kivy==2.1.0,kivymd,sqlite3
+requirements = python3, kivy==2.3.0, kivymd==1.1.1, pillow==9.5.0
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -86,16 +86,16 @@ fullscreen = 0
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions/#build-options-1 for all the supported syntaxes and properties)
-#android.permissions = android.permission.INTERNET, (name=android.permission.WRITE_EXTERNAL_STORAGE;maxSdkVersion=18)
+android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
 
 # (int) Target Android API, should be as high as possible.
-#android.api = 31
+android.api = 30
 
 # (int) Minimum API your APK / AAB will support.
-#android.minapi = 21
+android.minapi = 21
 
 # (int) Android SDK version to use
 #android.sdk = 20
