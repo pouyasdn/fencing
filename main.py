@@ -1,129 +1,328 @@
-from kivy.config import Config
-Config.set('graphics', 'multisamples', '0')
-
-from kivy.config import Config
-Config.set('kivy', 'keyboard_mode', 'systemanddock')
-
-from kivymd.app import MDApp
-from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDRaisedButton, MDFlatButton
-from kivymd.uix.textfield import MDTextField
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import OneLineListItem, MDList
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.toolbar import MDToolbar
+from kivy.lang import Builder
+from kivy.metrics import dp
+from kivy.properties import ListProperty, StringProperty, ObjectProperty
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.scrollview import ScrollView
-from kivy.properties import ListProperty, NumericProperty
-from kivy.animation import Animation
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.core.text import LabelBase
+from kivy.app import App
+import os
+import sqlite3
 
-class TournamentScreen(MDScreen):
+# Register Material Icons font for icon buttons
+here = os.path.dirname(__file__)
+LabelBase.register(
+    name="Icons",
+    fn_regular=os.path.join(here, "MaterialIcons-Regular.ttf")
+)
+
+# Custom Header widget with title and back callback
+class Header(BoxLayout):
+    title = StringProperty('')
+    back_callback = ObjectProperty(lambda *args: None)
+
+KV = '''
+<IconButton@Button>:
+    size_hint: None, None
+    size: dp(56), dp(56)
+    background_normal: ''
+    background_color: 0,0,0,0
+    font_name: 'Icons'
+    font_size: dp(24)
+
+<RoundButton@Button>:
+    size_hint: 0.8, None
+    height: dp(60)
+    font_size: '16sp'
+    background_normal: ''
+    background_color: 0.26,0.12,0.53,1
+    color: 1,1,1,1
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12)]
+
+<Header>:
+    size_hint_y: None
+    height: dp(56)
+    canvas.before:
+        Color:
+            rgba: 0.26,0.12,0.53,1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    IconButton:
+        text: '\ue5c4'  # arrow-left
+        on_release: root.back_callback()
+    Label:
+        text: root.title
+        color: 1,1,1,1
+        valign: 'middle'
+        halign: 'center'
+
+ScreenManager:
+    MenuScreen:
+    SavedScreen:
+    MatchScreen:
+    SummaryScreen:
+    RankingScreen:
+
+<MenuScreen>:
+    name: 'menu'
+    FloatLayout:
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(12)
+            spacing: dp(16)
+            size_hint: 0.9,0.9
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            Header:
+                title: 'Fencing Tournament'
+                back_callback: lambda *args: None
+            BoxLayout:
+                size_hint_y: None
+                height: dp(56)
+                spacing: dp(12)
+                TextInput:
+                    id: name_input
+                    hint_text: 'Participant Name'
+                    font_size: '16sp'
+                    size_hint_x: .7
+                IconButton:
+                    text: '\ue7fe'  # account-plus
+                    on_release: root.add_member(name_input.text)
+                IconButton:
+                    text: '\ue2c4'  # database-import
+                    on_release: root.manager.current='saved'
+            ScrollView:
+                GridLayout:
+                    id: member_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+            RoundButton:
+                text: 'Start Tournament'
+                disabled: len(root.members) < 2
+                on_release: root.start_tournament()
+
+<SavedScreen>:
+    name: 'saved'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(12)
+        spacing: dp(16)
+        Header:
+            title: 'Saved Players'
+            back_callback: lambda *args: app.back_to_menu()
+        ScrollView:
+            GridLayout:
+                id: saved_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+
+<MatchScreen>:
+    name: 'match'
+    FloatLayout:
+        Header:
+            id: top_bar
+            title: 'Match'
+            back_callback: lambda *args: app.back_to_menu()
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: .9, None
+            height: dp(260)
+            pos_hint: {'center_x': .5, 'center_y': .6}
+            canvas.before:
+                Color:
+                    rgba: 1,1,1,1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(12)]
+            Label:
+                id: match_label
+                text: 'A vs B'
+                font_size: '24sp'
+                halign: 'center'
+                valign: 'middle'
+            BoxLayout:
+                spacing: dp(12)
+                size_hint_y: None
+                height: dp(60)
+                Button:
+                    id: btn1
+                    text: ''
+                    on_release: root.select_winner(btn1.text)
+                Button:
+                    id: btn2
+                    text: ''
+                    on_release: root.select_winner(btn2.text)
+
+<SummaryScreen>:
+    name: 'summary'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(12)
+        spacing: dp(16)
+        Header:
+            title: 'Summary'
+            back_callback: lambda *args: app.back_to_menu()
+        ScrollView:
+            GridLayout:
+                id: summary_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+        RoundButton:
+            text: 'View Rankings'
+            on_release: root.manager.current='ranking'
+
+<RankingScreen>:
+    name: 'ranking'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(12)
+        spacing: dp(16)
+        Header:
+            title: 'Rankings'
+            back_callback: lambda *args: app.back_to_menu()
+        ScrollView:
+            GridLayout:
+                id: rank_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+        RoundButton:
+            text: 'Back to Menu'
+            on_release: app.back_to_menu()
+'''
+
+class MenuScreen(Screen):
     members = ListProperty([])
-    matches = ListProperty([])
-    match_index = NumericProperty(0)
-    results = {}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.build_ui()
+        self.conn = sqlite3.connect('players.db')
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS players (name TEXT UNIQUE)')
+        self.conn.commit()
 
-    def build_ui(self):
-        # Toolbar
-        self.toolbar = MDToolbar(title="مدیریت تورنمنت")
-        self.toolbar.pos_hint = {"top": 1}
-        self.toolbar.md_bg_color = self.theme_cls.primary_color
-        self.add_widget(self.toolbar)
+    def add_member(self, name):
+        name = name.strip()
+        if not name or name in self.members:
+            return
+        self.members.append(name)
+        self.ids.member_list.add_widget(self._make_member_item(name))
 
-        # Main Layout
-        main = MDBoxLayout(orientation="vertical", spacing=10, padding=20, size_hint_y=None)
-        main.bind(minimum_height=main.setter('height'))
+    def _make_member_item(self, name):
+        box = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(12))
+        box.add_widget(Label(text=name, halign='left'))
+        del_btn = Button(text='\ue14c', font_name='Icons', size_hint_x=None, width=dp(48))
+        del_btn.bind(on_release=lambda *a: self.perform_remove(box, name))
+        save_btn = Button(text='\ue838', font_name='Icons', size_hint_x=None, width=dp(48))
+        save_btn.bind(on_release=lambda *a: self.perform_save(save_btn, name))
+        box.add_widget(del_btn)
+        box.add_widget(save_btn)
+        return box
 
-        # Input
-        self.input_field = MDTextField(hint_text="نام شرکت‌کننده را وارد کنید", size_hint_x=1)
-        self.add_widget(self.input_field)
-        add_btn = MDRaisedButton(text="افزودن", pos_hint={"center_x": .5}, on_release=self.add_member)
-        self.add_widget(add_btn)
+    def perform_remove(self, widget, name):
+        if name in self.members:
+            self.members.remove(name)
+        self.ids.member_list.remove_widget(widget)
 
-        # Members List
-        members_label = MDLabel(text="اعضا:", halign="right", font_style="H6")
-        main.add_widget(members_label)
-        self.member_list = MDList()
-        scroll_members = ScrollView(size_hint=(1, 0.3))
-        scroll_members.add_widget(self.member_list)
-        main.add_widget(scroll_members)
+    def perform_save(self, btn, name):
+        self.cursor.execute('INSERT OR IGNORE INTO players (name) VALUES (?)', (name,))
+        self.conn.commit()
+        btn.text = '\ue838'
 
-        # Start Button
-        start_btn = MDRaisedButton(text="شروع مسابقات", size_hint=(1, None), height=50, on_release=self.start_matches)
-        main.add_widget(start_btn)
+    def load_players(self):
+        return [r[0] for r in self.cursor.execute('SELECT name FROM players')]
 
-        # Wrap in ScrollView
-        scroll = ScrollView()
-        scroll.add_widget(main)
-        self.add_widget(scroll)
-
-    def add_member(self, instance):
-        name = self.input_field.text.strip()
-        if name and name not in self.members:
-            self.members.append(name)
-            self.input_field.text = ''
-            self.member_list.add_widget(OneLineListItem(text=name))
-
-    def start_matches(self, instance):
+    def start_tournament(self):
         if len(self.members) < 2:
             return
-        self.matches = [(self.members[i], self.members[j]) for i in range(len(self.members)) for j in range(i+1, len(self.members))]
-        self.match_index = 0
-        self.results.clear()
-        self.show_next_match()
+        match = self.manager.get_screen('match')
+        match.setup_matches(self.members[:])
+        self.manager.current = 'match'
 
-    def show_next_match(self):
-        if self.match_index >= len(self.matches):
-            return self.show_summary()
-        p1, p2 = self.matches[self.match_index]
-        content = MDBoxLayout(orientation="vertical", spacing=20, padding=20)
-        content.add_widget(MDLabel(text=f"{p1} در برابر {p2}", halign="center", font_style="H5"))
-        btn1 = MDRaisedButton(text=f"{p1} برنده است", on_release=lambda x: self.record(p1))
-        btn2 = MDRaisedButton(text=f"{p2} برنده است", on_release=lambda x: self.record(p2))
-        content.add_widget(btn1)
-        content.add_widget(btn2)
-        self.dialog = MDDialog(title="نتیجه مسابقه", type="custom", content_cls=content, auto_dismiss=False)
-        self.dialog.open()
+class SavedScreen(Screen):
+    def on_enter(self):
+        self.ids.saved_list.clear_widgets()
+        menu = self.manager.get_screen('menu')
+        for name in menu.load_players():
+            box = menu._make_member_item(name)
+            self.ids.saved_list.add_widget(box)
 
-    def record(self, winner):
-        p1, p2 = self.matches[self.match_index]
-        self.results[(p1, p2)] = winner
-        self.dialog.dismiss()
-        Animation(opacity=0, d=0.3).start(self)
-        self.match_index += 1
-        Animation(opacity=1, d=0.3).start(self)
-        self.show_next_match()
+class MatchScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.matches = []
+        self.current_index = 0
+        self.results = {}
 
-    def show_summary(self):
-        content = MDBoxLayout(orientation="vertical", spacing=10, padding=20)
-        for p1, p2 in self.matches:
-            winner = self.results.get((p1, p2), "-")
-            content.add_widget(MDLabel(text=f"{p1} vs {p2} : {winner}", halign="right"))
-        btn = MDRaisedButton(text="نمایش رنکینگ", on_release=self.show_ranking)
-        content.add_widget(btn)
-        self.summary = MDDialog(title="خلاصه مسابقات", type="custom", content_cls=content, size_hint=(0.9, 0.9))
-        self.summary.open()
+    def setup_matches(self, members):
+        self.matches = [(a, b) for i, a in enumerate(members) for b in members[i+1:]]
+        self.current_index = 0
+        self.results = {m: 0 for m in members}
+        self.show_match()
 
-    def show_ranking(self, instance):
-        scores = {m: 0 for m in self.members}
-        for win in self.results.values():
-            scores[win] += 1
-        ranking = sorted(scores.items(), key=lambda x: -x[1])
-        content = MDBoxLayout(orientation="vertical", spacing=10, padding=20)
-        for idx, (name, score) in enumerate(ranking, 1):
-            content.add_widget(MDLabel(text=f"{idx}. {name} - {score}"))
-        self.rank_dialog = MDDialog(title="رنکینگ نهایی", type="custom", content_cls=content)
-        self.rank_dialog.open()
+    def show_match(self):
+        a, b = self.matches[self.current_index]
+        self.ids.match_label.text = f"{a} vs {b}"
+        self.ids.btn1.text = f"{a} Wins"
+        self.ids.btn2.text = f"{b} Wins"
+        self.ids.top_bar.back_callback = lambda *args: app.back_to_menu()
+        self.ids.top_bar.title = f"Match {self.current_index+1}/{len(self.matches)}"
 
-class TournamentApp(MDApp):
+    def select_winner(self, winner_text):
+        w = winner_text.replace(" Wins", "")
+        self.results[w] += 1
+        self.current_index += 1
+        if self.current_index >= len(self.matches):
+            summ = self.manager.get_screen('summary')
+            summ.display_summary(self.matches, self.results)
+            self.manager.current = 'summary'
+        else:
+            self.show_match()
+
+class SummaryScreen(Screen):
+    def display_summary(self, matches, results):
+        self.ids.summary_list.clear_widgets()
+        for a, b in matches:
+            if results[a] == results[b]:
+                txt = 'Draw'
+            else:
+                txt = a if results[a] > results[b] else b
+            box = BoxLayout(size_hint_y=None, height=dp(48))
+            box.add_widget(Label(text=f"{a} vs {b} → {txt}"))
+            self.ids.summary_list.add_widget(box)
+
+class RankingScreen(Screen):
+    def on_enter(self):
+        self.ids.rank_list.clear_widgets()
+        match_screen = self.manager.get_screen('match')
+        for n, s in sorted(match_screen.results.items(), key=lambda x: -x[1]):
+            box = BoxLayout(size_hint_y=None, height=dp(48))
+            box.add_widget(Label(text=f"{n}: {s} wins"))
+            self.ids.rank_list.add_widget(box)
+
+class FencingApp(App):
     def build(self):
-        self.theme_cls.primary_palette = "Blue"
-        self.theme_cls.theme_style = "Light"
-        return TournamentScreen()
+        global app
+        app = self
+        return Builder.load_string(KV)
+
+    def back_to_menu(self):
+        self.root.current = 'menu'
 
 if __name__ == '__main__':
-    TournamentApp().run()
+    FencingApp().run()
