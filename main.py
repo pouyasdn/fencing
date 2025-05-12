@@ -1,3 +1,6 @@
+from kivy.config import Config
+Config.set('graphics', 'multisamples', '0')
+
 import os
 import shutil
 
