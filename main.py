@@ -1,27 +1,19 @@
 from kivy.lang import Builder
 from kivymd.app import MDApp
-import sqlite3
-print(sqlite3.sqlite_version)
-conn = sqlite3.connect("test.db")
-conn.execute("CREATE TABLE IF NOT EXISTS foo (id INTEGER)")
-conn.close()
 
 KV = '''
-MDScreen:
-    name: 'one'
-    ScrollView:
-        MDList:
-            id: test_list
+MDScreenManager:
+    MenuScreen:
+
+<MenuScreen@MDScreen>:
+    name: "menu"
+    MDLabel:
+        text: "Welcome"
+        halign: "center"
 '''
 
 class TestApp(MDApp):
     def build(self):
-        screen = Builder.load_string(KV)
-        from kivymd.uix.list import OneLineAvatarIconListItem, IconLeftWidget
-        item = OneLineAvatarIconListItem(text="Alice")
-        item.add_widget(IconLeftWidget(icon="account"))
-        screen.ids.test_list.add_widget(item)
-        return screen
+        return Builder.load_string(KV)
 
-if __name__ == "__main__":
-    TestApp().run()
+TestApp().run()
