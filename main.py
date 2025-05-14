@@ -5,6 +5,9 @@ KV = '''
 MDScreenManager:
     Screen:
         name: 'one'
+        MDRaisedButton:
+            text: "Press me"
+            pos_hint: {"center_x": .5, "center_y": .5}
     Screen:
         name: 'two'
 '''
