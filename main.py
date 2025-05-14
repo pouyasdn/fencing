@@ -2,19 +2,21 @@ from kivy.lang import Builder
 from kivymd.app import MDApp
 
 KV = '''
-MDScreenManager:
-    Screen:
-        name: 'one'
-        MDRaisedButton:
-            text: "Press me"
-            pos_hint: {"center_x": .5, "center_y": .5}
-    Screen:
-        name: 'two'
+MDScreen:
+    name: 'one'
+    ScrollView:
+        MDList:
+            id: test_list
 '''
 
 class TestApp(MDApp):
     def build(self):
-        return Builder.load_string(KV)
+        screen = Builder.load_string(KV)
+        from kivymd.uix.list import OneLineAvatarIconListItem, IconLeftWidget
+        item = OneLineAvatarIconListItem(text="Alice")
+        item.add_widget(IconLeftWidget(icon="account"))
+        screen.ids.test_list.add_widget(item)
+        return screen
 
 if __name__ == "__main__":
     TestApp().run()
