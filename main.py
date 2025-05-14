@@ -1,124 +1,150 @@
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
-from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.textinput import TextInput
-from kivy.uix.scrollview import ScrollView
+from kivy.uix.button import Button
 from kivy.uix.popup import Popup
-from kivy.properties import ObjectProperty
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
+from kivy.properties import StringProperty, ListProperty, NumericProperty
+from kivy.core.window import Window
 
-class Player:
-    def __init__(self, name):
-        self.name = name
-        self.wins = 0
-        self.losses = 0
-
-class Match:
-    def __init__(self, p1, p2):
-        self.p1 = p1
-        self.p2 = p2
-        self.winner = None
+Window.size = (480, 800)
 
 class PlayerInputScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout = BoxLayout(orientation='vertical')
-        self.input_box = TextInput(hint_text='Enter player names, one per line')
-        self.layout.add_widget(self.input_box)
-        self.start_button = Button(text='Start Tournament', size_hint=(1, 0.2))
-        self.start_button.bind(on_press=self.start_tournament)
+        self.layout = BoxLayout(orientation='vertical', spacing=10, padding=20)
+        self.label = Label(text='نام بازیکنان را وارد کنید (حداقل 3 نفر):', font_size=18)
+        self.players_input = TextInput(hint_text='هر نام را با Enter جدا کنید', multiline=True, font_size=16)
+        self.start_button = Button(text='شروع مسابقات', size_hint=(1, 0.2), on_press=self.start_tournament)
+        self.layout.add_widget(self.label)
+        self.layout.add_widget(self.players_input)
         self.layout.add_widget(self.start_button)
         self.add_widget(self.layout)
 
     def start_tournament(self, instance):
-        player_names = self.input_box.text.strip().split('\n')
-        if len(player_names) < 2:
-            popup = Popup(title='Error', content=Label(text='Enter at least 2 players'), size_hint=(0.6, 0.4))
+        names = [name.strip() for name in self.players_input.text.split('\n') if name.strip()]
+        if len(names) < 3:
+            popup = Popup(title='خطا', content=Label(text='حداقل 3 بازیکن وارد کنید.'), size_hint=(None, None), size=(300, 200))
             popup.open()
-            return
+        else:
+            self.manager.players = names
+            self.manager.games = self.generate_games(names)
+            self.manager.results = []
+            self.manager.current_game_index = 0
+            self.manager.transition = NoTransition()
+            self.manager.current = 'game'
 
-        players = [Player(name.strip()) for name in player_names if name.strip()]
-        matches = []
+    def generate_games(self, players):
+        games = []
         for i in range(len(players)):
-            for j in range(i+1, len(players)):
-                matches.append(Match(players[i], players[j]))
+            for j in range(i + 1, len(players)):
+                games.append((players[i], players[j]))
+        return games
 
-        self.manager.players = players
-        self.manager.matches = matches
-        self.manager.current_match_index = 0
-        self.manager.current = 'match'
-
-class MatchScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.layout = BoxLayout(orientation='vertical')
-        self.label = Label(text='')
-        self.layout.add_widget(self.label)
-        self.btn1 = Button(text='', size_hint=(1, 0.3))
-        self.btn2 = Button(text='', size_hint=(1, 0.3))
-        self.btn1.bind(on_press=self.set_winner1)
-        self.btn2.bind(on_press=self.set_winner2)
-        self.layout.add_widget(self.btn1)
-        self.layout.add_widget(self.btn2)
-        self.add_widget(self.layout)
+class GameScreen(Screen):
+    player1 = StringProperty('')
+    player2 = StringProperty('')
 
     def on_enter(self):
-        if self.manager.current_match_index >= len(self.manager.matches):
-            self.manager.current = 'ranking'
-            return
+        if self.manager.current_game_index < len(self.manager.games):
+            game = self.manager.games[self.manager.current_game_index]
+            self.player1, self.player2 = game
+            self.ids.label.text = f"نتیجه بازی بین {self.player1} و {self.player2} را وارد کنید:"
+        else:
+            self.manager.transition = NoTransition()
+            self.manager.current = 'results'
 
-        match = self.manager.matches[self.manager.current_match_index]
-        self.label.text = f"Who won this match?"
-        self.btn1.text = match.p1.name
-        self.btn2.text = match.p2.name
-
-    def set_winner1(self, instance):
-        self.set_winner(self.manager.matches[self.manager.current_match_index].p1,
-                        self.manager.matches[self.manager.current_match_index].p2)
-
-    def set_winner2(self, instance):
-        self.set_winner(self.manager.matches[self.manager.current_match_index].p2,
-                        self.manager.matches[self.manager.current_match_index].p1)
-
-    def set_winner(self, winner, loser):
-        winner.wins += 1
-        loser.losses += 1
-        self.manager.matches[self.manager.current_match_index].winner = winner
-        self.manager.current_match_index += 1
+    def submit_result(self, winner):
+        self.manager.results.append((self.player1, self.player2, winner))
+        self.manager.current_game_index += 1
         self.on_enter()
 
-class RankingScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
-        self.scroll = ScrollView()
-        self.label_box = BoxLayout(orientation='vertical', size_hint_y=None)
-        self.label_box.bind(minimum_height=self.label_box.setter('height'))
-        self.scroll.add_widget(self.label_box)
-        layout.add_widget(self.scroll)
-        self.restart_btn = Button(text='Restart', size_hint=(1, 0.2))
-        self.restart_btn.bind(on_press=self.restart)
-        layout.add_widget(self.restart_btn)
-        self.add_widget(layout)
+class ResultsScreen(Screen):
+    standings = ListProperty()
 
     def on_enter(self):
-        self.label_box.clear_widgets()
-        players = self.manager.players
-        players.sort(key=lambda p: p.wins, reverse=True)
-        for i, player in enumerate(players):
-            self.label_box.add_widget(Label(text=f"{i+1}. {player.name} - Wins: {player.wins}, Losses: {player.losses}", size_hint_y=None, height=40))
+        scores = {player: 0 for player in self.manager.players}
+        for p1, p2, winner in self.manager.results:
+            if winner in scores:
+                scores[winner] += 1
 
-    def restart(self, instance):
-        self.manager.current = 'player_input'
+        sorted_players = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        self.standings = sorted_players
+
+        self.ids.standings_layout.clear_widgets()
+        for name, score in sorted_players:
+            self.ids.standings_layout.add_widget(Label(text=f"{name}: {score} برد", font_size=16))
+
+        self.ids.results_layout.clear_widgets()
+        for p1, p2, winner in self.manager.results:
+            self.ids.results_layout.add_widget(Label(text=f"{p1} vs {p2} → برنده: {winner}", font_size=14))
 
 class TournamentApp(App):
     def build(self):
         sm = ScreenManager()
-        sm.add_widget(PlayerInputScreen(name='player_input'))
-        sm.add_widget(MatchScreen(name='match'))
-        sm.add_widget(RankingScreen(name='ranking'))
+        sm.add_widget(PlayerInputScreen(name='input'))
+        sm.add_widget(GameScreen(name='game'))
+        sm.add_widget(ResultsScreen(name='results'))
         return sm
+
+from kivy.lang import Builder
+
+Builder.load_string('''
+<GameScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 20
+        spacing: 20
+
+        Label:
+            id: label
+            text: root.player1 + ' vs ' + root.player2
+            font_size: 18
+
+        Button:
+            text: root.player1 + ' برنده شد'
+            on_press: root.submit_result(root.player1)
+            font_size: 16
+            size_hint_y: 0.2
+
+        Button:
+            text: root.player2 + ' برنده شد'
+            on_press: root.submit_result(root.player2)
+            font_size: 16
+            size_hint_y: 0.2
+
+<ResultsScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 20
+        spacing: 10
+
+        Label:
+            text: 'رده‌بندی نهایی:'
+            font_size: 20
+
+        GridLayout:
+            id: standings_layout
+            cols: 1
+            size_hint_y: None
+            height: self.minimum_height
+
+        Label:
+            text: 'نتایج بازی‌ها:'
+            font_size: 18
+            size_hint_y: None
+            height: 30
+
+        GridLayout:
+            id: results_layout
+            cols: 1
+            size_hint_y: None
+            height: self.minimum_height
+
+<PlayerInputScreen>:
+''')
 
 if __name__ == '__main__':
     TournamentApp().run()
