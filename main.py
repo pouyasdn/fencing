@@ -1,5 +1,10 @@
 from kivy.lang import Builder
 from kivymd.app import MDApp
+import sqlite3
+print(sqlite3.sqlite_version)
+conn = sqlite3.connect("test.db")
+conn.execute("CREATE TABLE IF NOT EXISTS foo (id INTEGER)")
+conn.close()
 
 KV = '''
 MDScreen:
