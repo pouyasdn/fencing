@@ -1,9 +1,17 @@
-from kivy.app import App
-from kivy.uix.label import Label
+from kivy.lang import Builder
+from kivymd.app import MDApp
 
-class TestApp(App):
+KV = '''
+MDScreenManager:
+    Screen:
+        name: 'one'
+    Screen:
+        name: 'two'
+'''
+
+class TestApp(MDApp):
     def build(self):
-        return Label(text="Hello, Kivy!", halign="center")
+        return Builder.load_string(KV)
 
 if __name__ == "__main__":
     TestApp().run()
