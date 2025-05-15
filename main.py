@@ -27,7 +27,7 @@ ScreenManager:
 
         canvas.before:
             Color:
-                rgba: 1, 1, 1, 1  # سفید
+                rgba: 1, 1, 1, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -36,15 +36,15 @@ ScreenManager:
             text: 'Enter player names (one per line, min 3):'
             size_hint_y: None
             height: '30dp'
-            color: 0, 0, 0, 1  # مشکی
+            color: 0, 0, 0, 1
 
         TextInput:
             id: player_input
             multiline: True
             size_hint_y: None
             height: '150dp'
-            background_color: 1, 1, 1, 1  # سفید
-            foreground_color: 0, 0, 0, 1  # مشکی
+            background_color: 1, 1, 1, 1
+            foreground_color: 0, 0, 0, 1
             hint_text: 'Player Names'
 
         Button:
@@ -56,51 +56,64 @@ ScreenManager:
             on_release: root.start_tournament()
 
 
-<GameScreen@StyledScreen>:
+<GameScreen>:
     name: 'game'
-    player1: ''
-    player2: ''
     BoxLayout:
         orientation: 'vertical'
         padding: 20
         spacing: 10
 
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
         Label:
             id: match_label
-            text: root.player1 + " vs " + root.player2
-            font_size: '20sp'
-            size_hint_y: None
-            height: '40dp'
+            text: root.player1 + ' vs ' + root.player2
+            font_size: '24dp'
             color: 0, 0, 0, 1
-
-        Button:
-            text: root.player1 + ' Wins'
             size_hint_y: None
-            height: '40dp'
-            background_color: 0.2, 0.6, 0.4, 1
-            color: 1, 1, 1, 1
-            on_release: root.submit_result(root.player1)
+            height: '50dp'
 
-        Button:
-            text: root.player2 + ' Wins'
+        BoxLayout:
+            spacing: 10
             size_hint_y: None
-            height: '40dp'
-            background_color: 0.7, 0.2, 0.2, 1
-            color: 1, 1, 1, 1
-            on_release: root.submit_result(root.player2)
+            height: '50dp'
 
-<ResultsScreen@StyledScreen>:
+            Button:
+                text: root.player1 + ' Wins'
+                background_color: 0.1, 0.6, 0.3, 1
+                on_release: root.submit_result(root.player1)
+
+            Button:
+                text: root.player2 + ' Wins'
+                background_color: 0.6, 0.1, 0.3, 1
+                on_release: root.submit_result(root.player2)
+
+
+<ResultsScreen>:
     name: 'results'
     BoxLayout:
         orientation: 'vertical'
         padding: 20
         spacing: 10
 
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
         Label:
             text: 'Final Standings'
+            font_size: '20dp'
+            color: 0, 0, 0, 1
             size_hint_y: None
             height: '30dp'
-            color: 0, 0, 0, 1
 
         ScrollView:
             GridLayout:
@@ -108,13 +121,13 @@ ScreenManager:
                 cols: 1
                 size_hint_y: None
                 height: self.minimum_height
-                spacing: 5
 
         Label:
             text: 'Match Results'
+            font_size: '20dp'
+            color: 0, 0, 0, 1
             size_hint_y: None
             height: '30dp'
-            color: 0, 0, 0, 1
 
         ScrollView:
             GridLayout:
@@ -122,7 +135,6 @@ ScreenManager:
                 cols: 1
                 size_hint_y: None
                 height: self.minimum_height
-                spacing: 5
 '''
 
 
