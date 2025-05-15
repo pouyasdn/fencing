@@ -4,30 +4,57 @@ from kivy.factory import Factory
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
 from kivy.metrics import dp
-from kivy.storage.jsonstore import JsonStore
 from kivy.properties import ObjectProperty
+from kivy.storage.jsonstore import JsonStore
+from kivy.clock import Clock
+from kivy.utils import get_color_from_hex as rgba
+from kivy.properties import ListProperty
+from kivy.uix.button import Button
+import os, json
 
-# JsonStore برای نگهداری بازیکنان
-store = JsonStore('players_store.json')
+# آماده‌سازی JsonStore
+DB_PATH = 'players_store.json'
+if os.path.exists(DB_PATH):
+    try:
+        with open(DB_PATH, 'r', encoding='utf-8') as f:
+            json.load(f)
+    except:
+        os.remove(DB_PATH)
+store = JsonStore(DB_PATH)
 
 KV = '''
 #:import rgba kivy.utils.get_color_from_hex
 #:import dp kivy.metrics.dp
 
-<StyledButton@Button>:
-    bg_color: rgba('#3F51B5')  # مقدار پیش‌فرض
-    background_normal: ''
-    background_color: self.bg_color
-    color: 1, 1, 1, 1
-    font_size: '16sp'
-    size_hint_y: None
-    height: dp(44)
-
 <ContentCard@BoxLayout>:
     canvas.before:
         Color:
-            rgba: 0.25, 0.32, 0.71, 0.1
+            rgba: 0, 0, 0, 0.1
+        RoundedRectangle:
+            pos: self.x + 2, self.y - 2
+            size: self.size
+            radius: [12]
+        Color:
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12]
+
+<StyledButton@Button>:
+    bg_color: rgba('#3F51B5')
+    background_normal: ''
+    background_down: ''
+    background_color: 0, 0, 0, 0
+    color: 1, 1, 1, 1
+    font_size: '16sp'
+    size_hint_y: None
+    height: dp(48)
+    canvas.before:
+        Color:
+            rgba: self.bg_color
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -45,7 +72,7 @@ ScreenManager:
     FloatLayout:
         canvas.before:
             Color:
-                rgba: rgba('#F8F8F2')
+                rgba: rgba('#ECEFF1')
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -55,18 +82,21 @@ ScreenManager:
             size_hint: 0.9, 0.85
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             padding: dp(20)
-            spacing: dp(12)
+            spacing: dp(16)
 
             Label:
                 text: 'Tournament Setup'
                 font_size: '24sp'
+                bold: True
+                color: rgba('#263238')
                 size_hint_y: None
-                height: dp(40)
-                color: 0.1, 0.1, 0.1, 1
+                height: dp(32)
+                halign: 'center'
+                text_size: self.width, None
 
             BoxLayout:
                 size_hint_y: None
-                height: dp(44)
+                height: dp(48)
                 spacing: dp(8)
 
                 TextInput:
@@ -74,40 +104,34 @@ ScreenManager:
                     hint_text: 'Player name'
                     background_color: 1, 1, 1, 1
                     foreground_color: 0, 0, 0, 1
-                    padding: [dp(10), dp(10)]
+                    padding: [dp(12), dp(12)]
+                    multiline: False
 
                 StyledButton:
                     text: 'Add'
-                    bg_color: rgba('#4CAF50')
-                    on_release: root.add_player()
+                    on_release: root.add_player(player_input.text)
 
             Label:
                 text: 'Players:'
+                font_size: '18sp'
+                color: rgba('#37474F')
                 size_hint_y: None
-                height: dp(30)
-                color: 0.1, 0.1, 0.1, 1
+                height: dp(28)
 
             ScrollView:
                 do_scroll_x: False
+                do_scroll_y: True
 
-                BoxLayout:
-                    orientation: 'vertical'
+                GridLayout:
+                    id: player_list
+                    cols: 1
                     size_hint_y: None
                     height: self.minimum_height
-                    spacing: dp(6)
-
-                    GridLayout:
-                        id: player_list
-                        cols: 1
-                        size_hint_y: None
-                        height: self.minimum_height
-                        row_default_height: dp(40)
-                        row_force_default: True
-                        spacing: dp(5)
+                    spacing: dp(8)
 
             StyledButton:
                 text: 'Start Tournament'
-                bg_color: rgba('#3F51B5')
+                pos_hint: {'center_x': 0.5}
                 on_release: root.start_tournament()
 
 <GameScreen>:
@@ -116,7 +140,7 @@ ScreenManager:
     FloatLayout:
         canvas.before:
             Color:
-                rgba: rgba('#F8F8F2')
+                rgba: rgba('#ECEFF1')
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -125,37 +149,39 @@ ScreenManager:
             orientation: 'vertical'
             size_hint: 0.9, 0.6
             pos_hint: {'center_x': 0.5, 'center_y': 0.6}
-            padding: dp(16)
+            padding: dp(20)
             spacing: dp(16)
 
             Label:
                 id: match_label
                 text: ''
                 font_size: '22sp'
-                color: 0.1, 0.1, 0.1, 1
+                bold: True
+                color: rgba('#263238')
                 size_hint_y: None
                 height: dp(36)
                 halign: 'center'
+                text_size: self.width, None
 
             BoxLayout:
                 spacing: dp(16)
                 size_hint_y: None
-                height: dp(44)
+                height: dp(48)
 
                 StyledButton:
                     id: p1_btn
-                    bg_color: rgba('#4CAF50')
+                    text: ''
                     on_release: root.submit_result(root.player1)
 
                 StyledButton:
                     id: p2_btn
-                    bg_color: rgba('#F44336')
+                    text: ''
                     on_release: root.submit_result(root.player2)
 
         StyledButton:
             text: 'Back'
             size_hint: None, None
-            size: dp(100), dp(36)
+            size: dp(100), dp(40)
             pos_hint: {'x': 0.05, 'y': 0.92}
             on_release: app.back_to_input()
 
@@ -165,7 +191,7 @@ ScreenManager:
     FloatLayout:
         canvas.before:
             Color:
-                rgba: rgba('#F8F8F2')
+                rgba: rgba('#ECEFF1')
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -174,103 +200,95 @@ ScreenManager:
             orientation: 'vertical'
             size_hint: 0.9, 0.8
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            padding: dp(16)
-            spacing: dp(12)
+            padding: dp(20)
+            spacing: dp(16)
 
             Label:
                 text: 'Final Standings'
                 font_size: '24sp'
+                bold: True
+                color: rgba('#263238')
                 size_hint_y: None
-                height: dp(40)
-                color: 0.1, 0.1, 0.1, 1
+                height: dp(36)
+                halign: 'center'
+                text_size: self.width, None
 
             ScrollView:
                 do_scroll_x: False
+                do_scroll_y: True
 
-                BoxLayout:
-                    orientation: 'vertical'
+                GridLayout:
+                    id: standings_layout
+                    cols: 1
                     size_hint_y: None
                     height: self.minimum_height
-                    spacing: dp(6)
-
-                    GridLayout:
-                        id: standings_layout
-                        cols: 1
-                        size_hint_y: None
-                        height: self.minimum_height
-                        row_default_height: dp(30)
-                        row_force_default: True
+                    spacing: dp(8)
 
             Label:
                 text: 'Match Results'
                 font_size: '20sp'
+                color: rgba('#37474F')
                 size_hint_y: None
-                height: dp(30)
-                color: 0.1, 0.1, 0.1, 1
+                height: dp(28)
+                halign: 'center'
+                text_size: self.width, None
 
             ScrollView:
                 do_scroll_x: False
+                do_scroll_y: True
 
-                BoxLayout:
-                    orientation: 'vertical'
+                GridLayout:
+                    id: results_layout
+                    cols: 1
                     size_hint_y: None
                     height: self.minimum_height
-                    spacing: dp(6)
-
-                    GridLayout:
-                        id: results_layout
-                        cols: 1
-                        size_hint_y: None
-                        height: self.minimum_height
-                        row_default_height: dp(30)
-                        row_force_default: True
+                    spacing: dp(8)
 
             StyledButton:
                 text: 'Back to Start'
-                size_hint_y: None
-                height: dp(44)
-                bg_color: rgba('#3F51B5')
+                pos_hint: {'center_x': 0.5}
                 on_release: app.back_to_input()
 '''
+class StyledButton(Button):
+    bg_color = ListProperty([0.25, 0.4, 0.71, 1])  # مقدار پیش‌فرض rgba('#3F51B5')
 
 class PlayerInputScreen(Screen):
     player_list = ObjectProperty(None)
     players = []
 
-    def on_kv_post(self, base_widget):
+    def on_kv_post(self, *args):
         self.reload_players()
 
     def reload_players(self):
-        self.players = []
+        self.players.clear()
         self.player_list.clear_widgets()
         for key in store.keys():
             name = store.get(key)['name']
             self.players.append(name)
-            self._add_item(name, saved=True)
+            Clock.schedule_once(lambda dt, n=name: self._add_item(n), 0)
 
-    def add_player(self):
-        name = self.ids.player_input.text.strip()
+    def add_player(self, name):
+        name = name.strip()
         if not name or name in self.players:
             return
         store.put(f"player_{name}", name=name)
         self.players.append(name)
-        self._add_item(name, saved=True)
+        Clock.schedule_once(lambda dt: self._add_item(name), 0)
         self.ids.player_input.text = ''
 
-    def _add_item(self, name, saved=False):
+    def _add_item(self, name):
         layout = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(8), padding=[dp(8), 0])
-        lbl = Label(text=name, color=(0.1, 0.1, 0.1, 1))
-        # استفاده از Factory برای StyledButton
+        lbl = Label(text=name, color=(0.2, 0.2, 0.2, 1))
         btn_toggle = Factory.StyledButton(
-            text=('Unsave' if saved else 'Save'),
-            bg_color=('#F44336' if saved else '#4CAF50'),
-            size_hint_x=None, width=dp(80)
+            text='Unsave' if store.exists(f"player_{name}") else 'Save',
+            bg_color=rgba('#F44336') if store.exists(f"player_{name}") else rgba('#4CAF50'),
+            size_hint_x=None, width=dp(80), height=dp(36)
         )
         btn_toggle.bind(on_release=lambda btn, nm=name: self.toggle_save(btn, nm))
         btn_del = Factory.StyledButton(
             text='Delete',
-            bg_color='#9E9E9E',
-            size_hint_x=None, width=dp(80)
+            bg_color=rgba('#9E9E9E'),
+            size_hint_x=None, width=dp(80), height=dp(36)
         )
         btn_del.bind(on_release=lambda btn, nm=name, w=layout: self.delete_player(w, nm))
         layout.add_widget(lbl)
@@ -283,11 +301,11 @@ class PlayerInputScreen(Screen):
         if store.exists(key):
             store.delete(key)
             btn.text = 'Save'
-            btn.bg_color = '#4CAF50'
+            btn.bg_color = rgba('#4CAF50')
         else:
             store.put(key, name=name)
             btn.text = 'Unsave'
-            btn.bg_color = '#F44336'
+            btn.bg_color = rgba('#F44336')
 
     def delete_player(self, widget, name):
         key = f"player_{name}"
@@ -304,8 +322,7 @@ class PlayerInputScreen(Screen):
         app.players = list(self.players)
         app.matches = [
             (app.players[i], app.players[j])
-            for i in range(len(app.players))
-            for j in range(i + 1, len(app.players))
+            for i in range(len(app.players)) for j in range(i+1, len(app.players))
         ]
         app.results = []
         app.scores = {n: 0 for n in app.players}
@@ -321,7 +338,6 @@ class GameScreen(Screen):
         app = App.get_running_app()
         if app.current_match >= len(app.matches):
             self.manager.current = 'results'
-            self.manager.get_screen('results').on_enter()
             return
         self.player1, self.player2 = app.matches[app.current_match]
         self.ids.match_label.text = f"{self.player1} vs {self.player2}"
@@ -342,11 +358,11 @@ class ResultsScreen(Screen):
         app = App.get_running_app()
         for name, sc in sorted(app.scores.items(), key=lambda x: x[1], reverse=True):
             self.ids.standings_layout.add_widget(
-                Label(text=f"{name}: {sc} wins", size_hint_y=None, height=dp(30), color=(0.1, 0.1, 0.1, 1))
+                Label(text=f"{name}: {sc} wins", size_hint_y=None, height=dp(30), color=(0.2, 0.2, 0.2, 1))
             )
         for p1, p2, w in app.results:
             self.ids.results_layout.add_widget(
-                Label(text=f"{p1} vs {p2} - Winner: {w}", size_hint_y=None, height=dp(30), color=(0.1, 0.1, 0.1, 1))
+                Label(text=f"{p1} vs {p2} - Winner: {w}", size_hint_y=None, height=dp(30), color=(0.2, 0.2, 0.2, 1))
             )
 
 class FencingApp(App):
