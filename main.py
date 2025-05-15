@@ -3,11 +3,13 @@ from kivy.lang import Builder
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
+from kivy.uix.screenmanager import NoTransition
 
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.screenmanager import MDScreenManager, NoTransition
-from kivy.uix.scrollview import ScrollView
+from kivymd.uix.screenmanager import MDScreenManager
+from kivymd.uix.list import MDList, OneLineAvatarIconListItem
+from kivy.properties import StringProperty, ListProperty
 
 # Set a reasonable default size (useful in mobile testing environments)
 Window.size = (360, 640)
@@ -81,13 +83,8 @@ KV = '''
         ScrollView:
             size_hint_y: None
             height: root.height * 0.4
-            GridLayout:
-                id: standings_layout
-                cols: 1
-                size_hint_y: None
-                height: self.minimum_height
-                spacing: 8
-                padding: [0, 0, 0, 10]
+            MDList:
+                id: standings_list
 
         Label:
             text: 'Match Results'
@@ -98,54 +95,42 @@ KV = '''
         ScrollView:
             size_hint_y: None
             height: root.height * 0.5
-            GridLayout:
-                id: results_layout
-                cols: 1
-                size_hint_y: None
-                height: self.minimum_height
-                spacing: 6
+            MDList:
+                id: results_list
 '''
 
 class PlayerInputScreen(MDScreen):
     def start_tournament(self):
-        input_text = self.ids.player_input.text
-        names = [n.strip() for n in input_text.split('\n') if n.strip()]
+        text = self.ids.player_input.text
+        names = [n.strip() for n in text.split('\n') if n.strip()]
         if len(names) < 3:
-            popup = Popup(
-                title='Error', content=Label(text='Please enter at least 3 players.'),
-                size_hint=(None, None), size=(300, 200)
-            )
-            popup.open()
+            Popup(title='Error', content=Label(text='Please enter at least 3 players.'),
+                  size_hint=(None, None), size=(300, 200)).open()
         else:
             self.manager.players = names
-            self.manager.games = self.generate_games(names)
+            self.manager.games = [(a, b) for i, a in enumerate(names) for b in names[i+1:]]
             self.manager.results = []
             self.manager.current_game_index = 0
             self.manager.transition = NoTransition()
             self.manager.current = 'game'
-
-    def generate_games(self, players):
-        games = []
-        for i in range(len(players)):
-            for j in range(i + 1, len(players)):
-                games.append((players[i], players[j]))
-        return games
 
 class GameScreen(MDScreen):
     player1 = StringProperty('')
     player2 = StringProperty('')
 
     def on_enter(self):
-        if self.manager.current_game_index < len(self.manager.games):
-            p1, p2 = self.manager.games[self.manager.current_game_index]
-            self.player1, self.player2 = p1, p2
-            self.ids.match_label.text = f"{p1} vs {p2}"
+        idx = self.manager.current_game_index
+        if idx < len(self.manager.games):
+            a, b = self.manager.games[idx]
+            self.player1, self.player2 = a, b
+            self.ids.match_label.text = f"{a} vs {b}"
         else:
             self.manager.transition = NoTransition()
             self.manager.current = 'results'
 
     def submit_result(self, winner):
-        self.manager.results.append((self.player1, self.player2, winner))
+        a, b = self.player1, self.player2
+        self.manager.results.append((a, b, winner))
         self.manager.current_game_index += 1
         self.on_enter()
 
@@ -154,27 +139,31 @@ class ResultsScreen(MDScreen):
 
     def on_enter(self):
         scores = {p: 0 for p in self.manager.players}
-        for p1, p2, winner in self.manager.results:
-            scores[winner] += 1
-
-        sorted_players = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        self.standings = sorted_players
-
-        self.ids.standings_layout.clear_widgets()
-        for name, score in sorted_players:
-            self.ids.standings_layout.add_widget(
-                Label(text=f"{name}: {score} wins", font_size=16, size_hint_y=None, height=30)
+        for a, b, w in self.manager.results:
+            scores[w] += 1
+        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        self.ids.standings_list.clear_widgets()
+        for name, score in sorted_scores:
+            self.ids.standings_list.add_widget(
+                OneLineAvatarIconListItem(text=f"{name}: {score} wins")
             )
-
-        self.ids.results_layout.clear_widgets()
-        for p1, p2, winner in self.manager.results:
-            self.ids.results_layout.add_widget(
-                Label(text=f"{p1} vs {p2} → Winner: {winner}", font_size=14, size_hint_y=None, height=24)
+        self.ids.results_list.clear_widgets()
+        for a, b, w in self.manager.results:
+            self.ids.results_list.add_widget(
+                OneLineAvatarIconListItem(text=f"{a} vs {b} → {w}")
             )
 
 class TournamentApp(MDApp):
     def build(self):
-        return Builder.load_string(KV)
+        # Load KV definitions
+        Builder.load_string(KV)
+
+        sm = MDScreenManager()
+        sm.add_widget(PlayerInputScreen(name='input'))
+        sm.add_widget(GameScreen(name='game'))
+        sm.add_widget(ResultsScreen(name='results'))
+        sm.current = 'input'
+        return sm
 
 if __name__ == '__main__':
     TournamentApp().run()
