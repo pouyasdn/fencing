@@ -1,18 +1,10 @@
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.properties import StringProperty
 from kivy.uix.label import Label
+from kivy.metrics import dp
 
 KV = '''
-<StyledScreen@Screen>:
-    canvas.before:
-        Color:
-            rgba: 0.95, 0.95, 0.95, 1  # Light background
-        Rectangle:
-            pos: self.pos
-            size: self.size
-
 ScreenManager:
     PlayerInputScreen:
     GameScreen:
@@ -20,11 +12,7 @@ ScreenManager:
 
 <PlayerInputScreen>:
     name: 'input'
-    BoxLayout:
-        orientation: 'vertical'
-        padding: 20
-        spacing: 10
-
+    FloatLayout:
         canvas.before:
             Color:
                 rgba: 1, 1, 1, 1
@@ -32,37 +20,79 @@ ScreenManager:
                 pos: self.pos
                 size: self.size
 
-        Label:
-            text: 'Enter player names (one per line, min 3):'
-            size_hint_y: None
-            height: '30dp'
-            color: 0, 0, 0, 1
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(10)
+            padding: dp(20)
+            size_hint: 0.9, 0.7
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            canvas.before:
+                Color:
+                    rgba: 0.96, 0.96, 0.96, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [12]
 
-        TextInput:
-            id: player_input
-            multiline: True
-            size_hint_y: None
-            height: '150dp'
-            background_color: 1, 1, 1, 1
-            foreground_color: 0, 0, 0, 1
-            hint_text: 'Player Names'
+            Label:
+                text: 'Tournament Setup'
+                font_size: '24sp'
+                size_hint_y: None
+                height: dp(40)
+                color: 0, 0, 0, 1
 
-        Button:
-            text: 'Start Tournament'
-            size_hint_y: None
-            height: '40dp'
-            background_color: 0.2, 0.4, 0.8, 1
-            color: 1, 1, 1, 1
-            on_release: root.start_tournament()
+            Label:
+                text: 'Enter player name:'
+                size_hint_y: None
+                height: dp(30)
+                color: 0, 0, 0, 1
+
+            TextInput:
+                id: player_input
+                multiline: False
+                size_hint_y: None
+                height: dp(40)
+                hint_text: 'Player name'
+                background_color: 1, 1, 1, 1
+                foreground_color: 0, 0, 0, 1
+
+            Button:
+                text: 'Add'
+                size_hint_y: None
+                height: dp(40)
+                on_release: root.add_player()
+
+            Label:
+                text: 'Players:'
+                size_hint_y: None
+                height: dp(30)
+                color: 0, 0, 0, 1
+
+            ScrollView:
+                size_hint_y: 1
+                do_scroll_x: False
+
+                GridLayout:
+                    id: player_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+                    row_default_height: dp(30)
+                    row_force_default: True
+
+            Button:
+                text: 'Start Tournament'
+                size_hint_y: None
+                height: dp(50)
+                on_release: root.start_tournament()
 
 
 <GameScreen>:
     name: 'game'
     BoxLayout:
         orientation: 'vertical'
-        padding: 20
-        spacing: 10
-
+        padding: dp(20)
+        spacing: dp(10)
         canvas.before:
             Color:
                 rgba: 1, 1, 1, 1
@@ -71,26 +101,33 @@ ScreenManager:
                 size: self.size
 
         Label:
-            id: match_label
-            text: root.player1 + ' vs ' + root.player2
-            font_size: '24dp'
-            color: 0, 0, 0, 1
+            text: 'Match Play'
+            font_size: '24sp'
             size_hint_y: None
-            height: '50dp'
+            height: dp(40)
+            color: 0, 0, 0, 1
+
+        Label:
+            id: match_label
+            text: ''
+            font_size: '20sp'
+            size_hint_y: None
+            height: dp(40)
+            color: 0, 0, 0, 1
 
         BoxLayout:
-            spacing: 10
+            spacing: dp(10)
             size_hint_y: None
-            height: '50dp'
+            height: dp(50)
 
             Button:
-                text: root.player1 + ' Wins'
-                background_color: 0.1, 0.6, 0.3, 1
+                id: p1_btn
+                text: ''
                 on_release: root.submit_result(root.player1)
 
             Button:
-                text: root.player2 + ' Wins'
-                background_color: 0.6, 0.1, 0.3, 1
+                id: p2_btn
+                text: ''
                 on_release: root.submit_result(root.player2)
 
 
@@ -98,9 +135,8 @@ ScreenManager:
     name: 'results'
     BoxLayout:
         orientation: 'vertical'
-        padding: 20
-        spacing: 10
-
+        padding: dp(20)
+        spacing: dp(10)
         canvas.before:
             Color:
                 rgba: 1, 1, 1, 1
@@ -110,10 +146,10 @@ ScreenManager:
 
         Label:
             text: 'Final Standings'
-            font_size: '20dp'
-            color: 0, 0, 0, 1
+            font_size: '24sp'
             size_hint_y: None
-            height: '30dp'
+            height: dp(40)
+            color: 0, 0, 0, 1
 
         ScrollView:
             GridLayout:
@@ -121,13 +157,15 @@ ScreenManager:
                 cols: 1
                 size_hint_y: None
                 height: self.minimum_height
+                row_default_height: dp(30)
+                row_force_default: True
 
         Label:
             text: 'Match Results'
-            font_size: '20dp'
-            color: 0, 0, 0, 1
+            font_size: '20sp'
             size_hint_y: None
-            height: '30dp'
+            height: dp(30)
+            color: 0, 0, 0, 1
 
         ScrollView:
             GridLayout:
@@ -135,46 +173,63 @@ ScreenManager:
                 cols: 1
                 size_hint_y: None
                 height: self.minimum_height
+                row_default_height: dp(30)
+                row_force_default: True
+
+        Button:
+            text: 'Back to Start'
+            size_hint_y: None
+            height: dp(50)
+            on_release: app.back_to_input()
 '''
 
-
 class PlayerInputScreen(Screen):
+    players = []
+
+    def add_player(self):
+        name = self.ids.player_input.text.strip()
+        if name:
+            self.players.append(name)
+            self.ids.player_list.add_widget(Label(
+                text=name, size_hint_y=None, height=dp(30), color=(0, 0, 0, 1)
+            ))
+            self.ids.player_input.text = ''
+
     def start_tournament(self):
-        input_text = self.ids.player_input.text
-        names = [name.strip() for name in input_text.split('\n') if name.strip()]
-        if len(names) < 3:
-            print("❌ Please enter at least 3 players.")
+        if len(self.players) < 2:
             return
-
-        self.manager.players = names
-        self.manager.games = self.generate_games(names)
-        self.manager.results = []
-        self.manager.current_game_index = 0
+        app = App.get_running_app()
+        app.players = self.players[:]
+        app.matches = [(app.players[i], app.players[j]) for i in range(len(app.players)) for j in range(i+1, len(app.players))]
+        app.results = []
+        app.scores = {name: 0 for name in app.players}
+        app.current_match = 0
         self.manager.current = 'game'
-
-    def generate_games(self, players):
-        games = []
-        for i in range(len(players)):
-            for j in range(i + 1, len(players)):
-                games.append((players[i], players[j]))
-        return games
+        self.manager.get_screen('game').load_match()
 
 
 class GameScreen(Screen):
-    player1 = StringProperty()
-    player2 = StringProperty()
+    player1 = ''
+    player2 = ''
 
-    def on_enter(self):
-        if self.manager.current_game_index < len(self.manager.games):
-            game = self.manager.games[self.manager.current_game_index]
-            self.player1, self.player2 = game
-        else:
+    def load_match(self):
+        app = App.get_running_app()
+        if app.current_match >= len(app.matches):
             self.manager.current = 'results'
+            self.manager.get_screen('results').on_enter()
+            return
+
+        self.player1, self.player2 = app.matches[app.current_match]
+        self.ids.match_label.text = f"{self.player1} vs {self.player2}"
+        self.ids.p1_btn.text = f"{self.player1} Wins"
+        self.ids.p2_btn.text = f"{self.player2} Wins"
 
     def submit_result(self, winner):
-        self.manager.results.append((self.player1, self.player2, winner))
-        self.manager.current_game_index += 1
-        self.on_enter()
+        app = App.get_running_app()
+        app.results.append((self.player1, self.player2, winner))
+        app.scores[winner] += 1
+        app.current_match += 1
+        self.load_match()
 
 
 class ResultsScreen(Screen):
@@ -182,36 +237,25 @@ class ResultsScreen(Screen):
         self.ids.standings_layout.clear_widgets()
         self.ids.results_layout.clear_widgets()
 
-        scores = {player: 0 for player in self.manager.players}
-        for p1, p2, winner in self.manager.results:
-            scores[winner] += 1
+        app = App.get_running_app()
+        sorted_scores = sorted(app.scores.items(), key=lambda x: x[1], reverse=True)
+        for name, sc in sorted_scores:
+            lbl = Label(text=f"{name}: {sc} wins", size_hint_y=None, height=dp(30), color=(0,0,0,1))
+            self.ids.standings_layout.add_widget(lbl)
 
-        sorted_players = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        for name, score in sorted_players:
-            self.ids.standings_layout.add_widget(Label(
-                text=f"{name}: {score} wins",
-                size_hint_y=None,
-                height=30,
-                color=(0, 0, 0, 1)
-            ))
-
-        for p1, p2, winner in self.manager.results:
-            self.ids.results_layout.add_widget(Label(
-                text=f"{p1} vs {p2} → Winner: {winner}",
-                size_hint_y=None,
-                height=30,
-                color=(0, 0, 0, 1)
-            ))
+        for p1, p2, winner in app.results:
+            lbl = Label(text=f"{p1} vs {p2} - Winner: {winner}", size_hint_y=None, height=dp(30), color=(0,0,0,1))
+            self.ids.results_layout.add_widget(lbl)
 
 
 class FencingApp(App):
     def build(self):
-        sm = Builder.load_string(KV)
-        sm.players = []
-        sm.games = []
-        sm.results = []
-        sm.current_game_index = 0
-        return sm
+        return Builder.load_string(KV)
+
+    def back_to_input(self):
+        self.root.get_screen('input').players = []
+        self.root.get_screen('input').ids.player_list.clear_widgets()
+        self.root.current = 'input'
 
 
 if __name__ == '__main__':
