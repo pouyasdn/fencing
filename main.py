@@ -1,18 +1,18 @@
-from kivy.core.window import Window
+from kivy.app import App
 from kivy.lang import Builder
-from kivy.properties import StringProperty, ListProperty
-from kivymd.app import MDApp
-from kivymd.uix.screen import MDScreen
-from kivy.uix.screenmanager import ScreenManager, NoTransition
-from kivymd.uix.label import MDLabel
-from kivymd.uix.list import OneLineListItem
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDRaisedButton
-
-# اندازه پیش‌فرض موبایل
-Window.size = (360, 640)
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.properties import StringProperty
+from kivy.uix.label import Label
 
 KV = '''
+<StyledScreen@Screen>:
+    canvas.before:
+        Color:
+            rgba: 0.95, 0.95, 0.95, 1  # Light background
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
 ScreenManager:
     PlayerInputScreen:
     GameScreen:
@@ -20,143 +20,125 @@ ScreenManager:
 
 <PlayerInputScreen>:
     name: 'input'
-    MDBoxLayout:
+    BoxLayout:
         orientation: 'vertical'
-        padding: dp(16)
-        spacing: dp(16)
-        md_bg_color: app.theme_cls.bg_normal
+        padding: 20
+        spacing: 10
 
-        MDTopAppBar:
-            title: 'Tournament Setup'
-            elevation: 4
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1  # سفید
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
-        MDCard:
-            orientation: 'vertical'
-            padding: dp(12)
-            spacing: dp(12)
-            size_hint: 0.95, None
-            height: dp(250)
-            pos_hint: {'center_x': 0.5}
+        Label:
+            text: 'Enter player names (one per line, min 3):'
+            size_hint_y: None
+            height: '30dp'
+            color: 0, 0, 0, 1  # مشکی
 
-            MDLabel:
-                text: 'Enter player names (one per line, min 3):'
-                font_style: 'Subtitle1'
-                size_hint_y: None
-                height: self.texture_size[1]
+        TextInput:
+            id: player_input
+            multiline: True
+            size_hint_y: None
+            height: '150dp'
+            background_color: 1, 1, 1, 1  # سفید
+            foreground_color: 0, 0, 0, 1  # مشکی
+            hint_text: 'Player Names'
 
-            MDTextField:
-                id: player_input
-                hint_text: 'Player Name'
-                multiline: True
-                size_hint_y: None
-                height: dp(120)
-
-        MDRaisedButton:
+        Button:
             text: 'Start Tournament'
-            pos_hint: {'center_x': 0.5}
-            size_hint: 0.6, None
-            height: dp(48)
+            size_hint_y: None
+            height: '40dp'
+            background_color: 0.2, 0.4, 0.8, 1
+            color: 1, 1, 1, 1
             on_release: root.start_tournament()
 
-<GameScreen>:
+
+<GameScreen@StyledScreen>:
     name: 'game'
     player1: ''
     player2: ''
-    MDBoxLayout:
+    BoxLayout:
         orientation: 'vertical'
-        padding: dp(16)
-        spacing: dp(20)
-        md_bg_color: app.theme_cls.bg_normal
+        padding: 20
+        spacing: 10
 
-        MDTopAppBar:
-            title: 'Match Play'
-            left_action_items: [['arrow-left', lambda x: app.back_to_input()]]
-            elevation: 4
-
-        MDCard:
-            orientation: 'vertical'
-            padding: dp(16)
-            size_hint: 0.9, None
-            height: dp(120)
-            pos_hint: {'center_x': 0.5}
-
-            MDLabel:
-                id: match_label
-                text: root.player1 + ' vs ' + root.player2
-                font_style: 'H5'
-                halign: 'center'
-
-        MDBoxLayout:
-            spacing: dp(16)
+        Label:
+            id: match_label
+            text: root.player1 + " vs " + root.player2
+            font_size: '20sp'
             size_hint_y: None
-            height: dp(60)
-            pos_hint: {'center_x': 0.5}
+            height: '40dp'
+            color: 0, 0, 0, 1
 
-            MDRaisedButton:
-                text: root.player1 + ' Wins'
-                on_release: root.submit_result(root.player1)
+        Button:
+            text: root.player1 + ' Wins'
+            size_hint_y: None
+            height: '40dp'
+            background_color: 0.2, 0.6, 0.4, 1
+            color: 1, 1, 1, 1
+            on_release: root.submit_result(root.player1)
 
-            MDRaisedButton:
-                text: root.player2 + ' Wins'
-                on_release: root.submit_result(root.player2)
+        Button:
+            text: root.player2 + ' Wins'
+            size_hint_y: None
+            height: '40dp'
+            background_color: 0.7, 0.2, 0.2, 1
+            color: 1, 1, 1, 1
+            on_release: root.submit_result(root.player2)
 
-<ResultsScreen>:
+<ResultsScreen@StyledScreen>:
     name: 'results'
-    MDBoxLayout:
+    BoxLayout:
         orientation: 'vertical'
-        padding: dp(16)
-        spacing: dp(16)
-        md_bg_color: app.theme_cls.bg_normal
+        padding: 20
+        spacing: 10
 
-        MDTopAppBar:
-            title: 'Results'
-            left_action_items: [['arrow-left', lambda x: app.back_to_input()]]
-            elevation: 4
-
-        MDLabel:
+        Label:
             text: 'Final Standings'
-            font_style: 'Subtitle1'
             size_hint_y: None
-            height: dp(30)
+            height: '30dp'
+            color: 0, 0, 0, 1
 
         ScrollView:
-            size_hint_y: 0.4
-            MDList:
+            GridLayout:
                 id: standings_layout
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: 5
 
-        MDLabel:
+        Label:
             text: 'Match Results'
-            font_style: 'Subtitle1'
             size_hint_y: None
-            height: dp(30)
+            height: '30dp'
+            color: 0, 0, 0, 1
 
         ScrollView:
-            size_hint_y: 0.5
-            MDList:
+            GridLayout:
                 id: results_layout
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: 5
 '''
 
 
-class PlayerInputScreen(MDScreen):
+class PlayerInputScreen(Screen):
     def start_tournament(self):
         input_text = self.ids.player_input.text
         names = [name.strip() for name in input_text.split('\n') if name.strip()]
         if len(names) < 3:
-            MDDialog(
-                title="Error",
-                text="Please enter at least 3 players.",
-                buttons=[MDRaisedButton(text="OK", on_release=lambda x: self.dismiss_dialog())]
-            ).open()
-        else:
-            self.manager.players = names
-            self.manager.games = self.generate_games(names)
-            self.manager.results = []
-            self.manager.current_game_index = 0
-            self.manager.current = 'game'
+            print("❌ Please enter at least 3 players.")
+            return
 
-    def dismiss_dialog(self):
-        for dialog in MDDialog._instances:
-            dialog.dismiss()
+        self.manager.players = names
+        self.manager.games = self.generate_games(names)
+        self.manager.results = []
+        self.manager.current_game_index = 0
+        self.manager.current = 'game'
 
     def generate_games(self, players):
         games = []
@@ -166,7 +148,7 @@ class PlayerInputScreen(MDScreen):
         return games
 
 
-class GameScreen(MDScreen):
+class GameScreen(Screen):
     player1 = StringProperty()
     player2 = StringProperty()
 
@@ -183,7 +165,7 @@ class GameScreen(MDScreen):
         self.on_enter()
 
 
-class ResultsScreen(MDScreen):
+class ResultsScreen(Screen):
     def on_enter(self):
         self.ids.standings_layout.clear_widgets()
         self.ids.results_layout.clear_widgets()
@@ -193,32 +175,32 @@ class ResultsScreen(MDScreen):
             scores[winner] += 1
 
         sorted_players = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
         for name, score in sorted_players:
-            self.ids.standings_layout.add_widget(
-                OneLineListItem(text=f"{name}: {score} wins")
-            )
+            self.ids.standings_layout.add_widget(Label(
+                text=f"{name}: {score} wins",
+                size_hint_y=None,
+                height=30,
+                color=(0, 0, 0, 1)
+            ))
 
         for p1, p2, winner in self.manager.results:
-            self.ids.results_layout.add_widget(
-                OneLineListItem(text=f"{p1} vs {p2} → Winner: {winner}")
-            )
+            self.ids.results_layout.add_widget(Label(
+                text=f"{p1} vs {p2} → Winner: {winner}",
+                size_hint_y=None,
+                height=30,
+                color=(0, 0, 0, 1)
+            ))
 
 
-class TournamentApp(MDApp):
+class FencingApp(App):
     def build(self):
-        self.theme_cls.primary_palette = "Blue"
-        self.theme_cls.theme_style = "Light"
-        self.root = Builder.load_string(KV)
-        self.root.players = []
-        self.root.games = []
-        self.root.results = []
-        self.root.current_game_index = 0
-        return self.root
-
-    def back_to_input(self):
-        self.root.current = 'input'
+        sm = Builder.load_string(KV)
+        sm.players = []
+        sm.games = []
+        sm.results = []
+        sm.current_game_index = 0
+        return sm
 
 
 if __name__ == '__main__':
-    TournamentApp().run()
+    FencingApp().run()
