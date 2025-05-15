@@ -35,7 +35,7 @@ requirements = python3,kivy==2.2.1
 # requirements.source.kivy = ../../kivy
 
 # (str) Presplash of the application
-presplash.filename = %(source.dir)s/lo_p.gif
+presplash.filename = %(source.dir)s/loading_page.jpg
 
 # (str) Icon of the application
 icon.filename = %(source.dir)s/logo.jpg
